@@ -8,12 +8,21 @@ import {
   addInsightToLog, 
   generateInsightExport 
 } from './insightSchema.js';
-import { 
+import {
   initializeSession,
   incrementMessageCount,
   addTokens,
-  finalizeSession
+  finalizeSession,
+  generateMetadataExport
 } from './sessionMeta.js';
+import {
+  exportLoopLog,
+  clearLoopLog
+} from './loopTracker.js';
+import {
+  exportCompressionLog,
+  clearCompressionLog
+} from './compressionLog.js';
 import {
   initializePhaseTracking,
   trackMessagePhase,
@@ -368,26 +377,48 @@ document.getElementById('userInput')
 
 document.getElementById('endSessionButton')
         .addEventListener('click', async () => {
-  // Finalize phase tracking
+  // Finalize all tracking systems
+  finalizeSession();
   finalizePhaseTracking();
   
-  // Export comprehensive session data
+  // Export ALL backend tracked data
   const insightData = generateInsightExport();
   const phaseData = generatePhaseExport();
+  const valenceData = generateValenceExport();
+  const metadataExport = generateMetadataExport();
+  const loopData = exportLoopLog();
+  const compressionData = exportCompressionLog();
   const currentPhase = getCurrentPhase();
   
   const sessionData = {
     sessionId: sessionId,
+    exportTimestamp: new Date().toISOString(),
+    
+    // Core session data
     messages: getSession(sessionId),
-    timestamp: new Date().toISOString(),
+    sessionMetadata: metadataExport,
+    
+    // Research tracking modules
     ...insightData, // Include insight log, legend, and statistics
     ...phaseData, // Include phase tracking data
+    ...valenceData, // Include tone/valence tracking
+    
+    // Backend logs
+    loopTracking: loopData,
+    compressionHistory: compressionData,
+    
+    // Summary metrics
     currentPhase: currentPhase.phase,
     sessionSummary: {
       totalMessages: getSession(sessionId).length - 1, // Exclude system message
       totalInsights: insightData.insightStats.total,
       totalPhases: phaseData.phaseSummary.totalPhases,
-      sessionDuration: phaseData.phaseSummary.sessionDuration
+      totalValenceEntries: valenceData.statistics.totalTagged,
+      totalLoops: loopData.loopLog.length,
+      totalCompressions: compressionData.compressionLog.length,
+      sessionDuration: phaseData.phaseSummary.sessionDuration,
+      averageValence: valenceData.statistics.averageValence,
+      tokenEfficiency: metadataExport.computedMetrics.averageTokensPerMessage
     }
   };
   
@@ -399,9 +430,12 @@ document.getElementById('endSessionButton')
   a.click();
   URL.revokeObjectURL(url);
   
-  // Clear all session data
+  // Clear all session data from all modules
   clearSession(sessionId);
   clearPhaseData();
+  clearValenceData();
+  clearLoopLog();
+  clearCompressionLog();
   
   // Clear the chat UI
   const chatbox = document.getElementById('chatbox');
