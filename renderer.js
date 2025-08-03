@@ -14,6 +14,14 @@ import {
   addTokens,
   finalizeSession
 } from './sessionMeta.js';
+import {
+  initializePhaseTracking,
+  trackMessagePhase,
+  getCurrentPhase,
+  generatePhaseExport,
+  clearPhaseData,
+  finalizePhaseTracking
+} from './insightPhases.js';
 
 const sessionId = 'default-session';
 
@@ -23,6 +31,9 @@ async function initializeApp() {
   
   // Initialize session metadata
   initializeSession(sessionId, 'explorer', 'concept-development');
+  
+  // Initialize phase tracking
+  initializePhaseTracking(sessionId);
   
   // Show initial token display
   updateTokenDisplay();
@@ -229,9 +240,12 @@ async function sendMessage() {
   const userMessage = addMessage(sessionId, 'user', userInput);
   incrementMessageCount('user');
   renderMessage(chatbox, 'You', userInput, userMessage.id);
+  
+  // Track message in current phase
+  let messages = getSession(sessionId);
+  trackMessagePhase(userMessage.id, userInput, 'user', null, messages.length);
 
   // Check token usage and optimize context if needed
-  let messages = getSession(sessionId);
   const tokenStats = getTokenStats(messages);
   
   // Lower threshold for more aggressive optimization (1800 instead of 2500)
@@ -267,6 +281,11 @@ async function sendMessage() {
     addTokens(responseTokens);
 
     renderMessage(chatbox, 'Sonder', aiResponse, assistantMessage.id);
+    
+    // Track assistant message in current phase
+    const updatedMessages = getSession(sessionId);
+    trackMessagePhase(assistantMessage.id, aiResponse, 'assistant', null, updatedMessages.length);
+    
     userInputEl.value = '';
     
     // Update token display if it exists
@@ -340,13 +359,27 @@ document.getElementById('userInput')
 
 document.getElementById('endSessionButton')
         .addEventListener('click', async () => {
-  // Export current session data including insights
+  // Finalize phase tracking
+  finalizePhaseTracking();
+  
+  // Export comprehensive session data
   const insightData = generateInsightExport();
+  const phaseData = generatePhaseExport();
+  const currentPhase = getCurrentPhase();
+  
   const sessionData = {
     sessionId: sessionId,
     messages: getSession(sessionId),
     timestamp: new Date().toISOString(),
-    ...insightData // Include insight log, legend, and statistics
+    ...insightData, // Include insight log, legend, and statistics
+    ...phaseData, // Include phase tracking data
+    currentPhase: currentPhase.phase,
+    sessionSummary: {
+      totalMessages: getSession(sessionId).length - 1, // Exclude system message
+      totalInsights: insightData.insightStats.total,
+      totalPhases: phaseData.phaseSummary.totalPhases,
+      sessionDuration: phaseData.phaseSummary.sessionDuration
+    }
   };
   
   const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
@@ -357,8 +390,9 @@ document.getElementById('endSessionButton')
   a.click();
   URL.revokeObjectURL(url);
   
-  // Clear the session data
+  // Clear all session data
   clearSession(sessionId);
+  clearPhaseData();
   
   // Clear the chat UI
   const chatbox = document.getElementById('chatbox');
@@ -368,7 +402,7 @@ document.getElementById('endSessionButton')
   const userInputEl = document.getElementById('userInput');
   userInputEl.value = '';
   
-  alert(`Session ended and data downloaded successfully! ${insightData.insightStats.total} insights tagged.`);
+  alert(`Session ended and data downloaded successfully! ${insightData.insightStats.total} insights tagged across ${phaseData.phaseSummary.totalPhases} phases.`);
 
   // Redirect to feedback page
   window.location.href = 'feedback.html';
