@@ -1,27 +1,49 @@
 // summarizer.js
 import { sendChatCompletion } from './openaiClient.js';
+import { logCompression } from './compressionLog.js';
 
 /**
- * Summarize a conversation's messages into a concise context message.
+ * Summarize conversation messages with maximum token efficiency
  * @param {Array<{role: string, content: string}>} messages
- * @returns {Promise<Array<{role: string, content: string}>>}  A new message array with a single system summary prompt
+ * @returns {Promise<Array<{role: string, content: string}>>} Optimized message array
  */
 export async function summarizeContext(messages) {
-    // Prepare the prompt for summarization
-    const promptMessages = [
-      {
-        role: 'system',
-        content: 'You are an assistant that condenses conversation history into a concise summary message to stay under token limits.'
-      },
-      ...messages
-    ];
+  // Keep system message, summarize the rest
+  const systemMsg = messages.find(msg => msg.role === 'system');
+  const conversationMsgs = messages.filter(msg => msg.role !== 'system');
   
-    // Use OpenAI API directly to get a summary
-    const { content: summary } = await sendChatCompletion(promptMessages);
+  // Create efficient summarization prompt
+  const summaryPrompt = {
+    role: 'user',
+    content: `Condense this conversation into key insights and context (max 150 tokens):\n\n${conversationMsgs.map(m => `${m.role}: ${m.content}`).join('\n')}`
+  };
   
-    // Return a new session context containing only the summary as system message
+  try {
+    const { content: summary } = await sendChatCompletion([
+      { role: 'system', content: 'Create ultra-concise conversation summaries.' },
+      summaryPrompt
+    ]);
+    
+    // Log the compression for research
+    logCompression(
+      conversationMsgs,
+      summary,
+      'automated',
+      'summarization'
+    );
+    
+    // Return optimized context
     return [
-      { role: 'system', content: summary }
+      systemMsg,
+      { role: 'system', content: `Previous context: ${summary}` }
+    ];
+  } catch (error) {
+    console.error('Summarization failed:', error);
+    // Fallback: keep system + last 3 messages
+    return [
+      systemMsg,
+      ...conversationMsgs.slice(-3)
     ];
   }
+}
   
