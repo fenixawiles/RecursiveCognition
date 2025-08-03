@@ -259,6 +259,27 @@ body {
     font-weight: bold;
 }
 
+/* Token efficiency UI elements */
+.token-display {
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    text-align: center;
+    font-family: monospace;
+}
+
+.compression-notice {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: #856404;
+    text-align: center;
+}
+
 /* Responsive adjustments for insight controls */
 @media (max-width: 500px) {
     .insight-dropdown {
@@ -273,5 +294,10 @@ body {
     .insight-dropdown button {
         font-size: 0.7rem;
         padding: 0.3rem 0.6rem;
+    }
+    
+    .token-display {
+        font-size: 0.8rem;
+        padding: 0.3rem;
     }
 }
