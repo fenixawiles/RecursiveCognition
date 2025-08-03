@@ -46,6 +46,12 @@ import {
   generateOriginExport,
   clearOriginData
 } from './originTracker.js';
+import {
+  IMPACT_RATINGS,
+  rateInsightImpact,
+  generateImpactExport,
+  clearImpactData
+} from './insightWeight.js';
 
 const sessionId = 'default-session';
 
@@ -146,6 +152,22 @@ function renderMessage(chatbox, sender, content, messageId) {
     typeSelect.appendChild(option);
   });
   
+  // Create impact rating select
+  const impactSelect = document.createElement('select');
+  impactSelect.id = `impact-rating-${messageId}`;
+  
+  const defaultImpactOption = document.createElement('option');
+  defaultImpactOption.value = '';
+  defaultImpactOption.textContent = 'Select impact level...';
+  impactSelect.appendChild(defaultImpactOption);
+  
+  Object.entries(IMPACT_RATINGS).forEach(([key, value]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    impactSelect.appendChild(option);
+  });
+  
   // Create note input
   const noteInput = document.createElement('input');
   noteInput.type = 'text';
@@ -165,6 +187,7 @@ function renderMessage(chatbox, sender, content, messageId) {
   
   // Assemble dropdown
   dropdown.appendChild(typeSelect);
+  dropdown.appendChild(impactSelect);
   dropdown.appendChild(noteInput);
   dropdown.appendChild(tagButton);
   dropdown.appendChild(cancelButton);
@@ -209,18 +232,25 @@ function hideInsightDropdown(messageId) {
  */
 function tagInsight(messageId, content) {
   const typeSelect = document.getElementById(`insight-type-${messageId}`);
+  const impactSelect = document.getElementById(`impact-rating-${messageId}`);
   const noteInput = document.getElementById(`insight-note-${messageId}`);
   
-  if (!typeSelect || !noteInput) {
+  if (!typeSelect || !impactSelect || !noteInput) {
     alert('Error: Could not find insight form elements.');
     return;
   }
   
   const insightType = typeSelect.value;
+  const impactRating = impactSelect.value;
   const userNote = noteInput.value;
   
   if (!insightType) {
     alert('Please select an insight type.');
+    return;
+  }
+  
+  if (!impactRating) {
+    alert('Please select an impact level.');
     return;
   }
   
@@ -229,6 +259,9 @@ function tagInsight(messageId, content) {
     const success = addInsightToLog(insight);
     
     if (success) {
+      // Rate the insight impact
+      rateInsightImpact(insight.id, impactRating);
+      
       // Automatically track origin of the insight
       const messages = getSession(sessionId);
       const targetMessage = messages.find(msg => msg.id === messageId);
@@ -415,6 +448,7 @@ document.getElementById('endSessionButton')
   const phaseData = generatePhaseExport();
   const valenceData = generateValenceExport();
   const originData = generateOriginExport();
+  const impactData = generateImpactExport();
   const metadataExport = generateMetadataExport();
   const loopData = exportLoopLog();
   const compressionData = exportCompressionLog();
