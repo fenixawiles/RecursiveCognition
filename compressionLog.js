@@ -53,7 +53,7 @@ function exportCompressionLog() {
   };
 }
 
-module.exports = {
+export {
   logCompression,
   getCompressionLog,
   clearCompressionLog,
