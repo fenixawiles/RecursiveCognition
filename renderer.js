@@ -40,6 +40,12 @@ import {
   generateValenceExport,
   clearValenceData
 } from './toneValence.js';
+import {
+  ORIGIN_TYPES,
+  autoRecordOrigin,
+  generateOriginExport,
+  clearOriginData
+} from './originTracker.js';
 
 const sessionId = 'default-session';
 
@@ -223,6 +229,29 @@ function tagInsight(messageId, content) {
     const success = addInsightToLog(insight);
     
     if (success) {
+      // Automatically track origin of the insight
+      const messages = getSession(sessionId);
+      const targetMessage = messages.find(msg => msg.id === messageId);
+      
+      if (targetMessage) {
+        // Get recent messages for context
+        const messageIndex = messages.findIndex(msg => msg.id === messageId);
+        const recentMessages = messages.slice(Math.max(0, messageIndex - 3), messageIndex + 1);
+        
+        // Auto-record origin based on message role and context
+        autoRecordOrigin(
+          insight.id,
+          targetMessage.role,
+          targetMessage.content,
+          recentMessages,
+          {
+            insightType: insightType,
+            manuallyTagged: true,
+            sequencePosition: messageIndex
+          }
+        );
+      }
+      
       // Visual feedback
       const messageContainer = document.getElementById(`insight-dropdown-${messageId}`).closest('.message-container');
       if (messageContainer) {
@@ -385,6 +414,7 @@ document.getElementById('endSessionButton')
   const insightData = generateInsightExport();
   const phaseData = generatePhaseExport();
   const valenceData = generateValenceExport();
+  const originData = generateOriginExport();
   const metadataExport = generateMetadataExport();
   const loopData = exportLoopLog();
   const compressionData = exportCompressionLog();
@@ -402,6 +432,7 @@ document.getElementById('endSessionButton')
     ...insightData, // Include insight log, legend, and statistics
     ...phaseData, // Include phase tracking data
     ...valenceData, // Include tone/valence tracking
+    ...originData, // Include origin/authorship tracking
     
     // Backend logs
     loopTracking: loopData,
@@ -414,6 +445,11 @@ document.getElementById('endSessionButton')
       totalInsights: insightData.insightStats.total,
       totalPhases: phaseData.phaseSummary.totalPhases,
       totalValenceEntries: valenceData.statistics.totalTagged,
+      totalOriginEntries: originData.statistics.totalInsights,
+      userOriginatedInsights: originData.statistics.userOriginated,
+      aiOriginatedInsights: originData.statistics.aiOriginated,
+      coConstructedInsights: originData.statistics.coConstructed,
+      collaborationRate: originData.statistics.collaborationRate,
       totalLoops: loopData.loopLog.length,
       totalCompressions: compressionData.compressionLog.length,
       sessionDuration: phaseData.phaseSummary.sessionDuration,
@@ -434,6 +470,7 @@ document.getElementById('endSessionButton')
   clearSession(sessionId);
   clearPhaseData();
   clearValenceData();
+  clearOriginData();
   clearLoopLog();
   clearCompressionLog();
   
