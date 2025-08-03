@@ -22,6 +22,15 @@ import {
   clearPhaseData,
   finalizePhaseTracking
 } from './insightPhases.js';
+import {
+  VALENCE_SCALE,
+  VALENCE_LABELS,
+  predictValence,
+  recordValence,
+  autoPredictValence,
+  generateValenceExport,
+  clearValenceData
+} from './toneValence.js';
 
 const sessionId = 'default-session';
 
