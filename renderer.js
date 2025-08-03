@@ -1,4 +1,4 @@
-import { getSession, addMessage, setSession } from './sessionManager.js';
+import { getSession, addMessage, setSession, clearSession } from './sessionManager.js';
 import { countTokens } from './tokenTracker.js';
 import { summarizeContext } from './summarizer.js';
 import { sendChatCompletion } from './openaiClient.js';
@@ -61,5 +61,19 @@ document.getElementById('endSessionButton')
   a.click();
   URL.revokeObjectURL(url);
   
-  alert('Session data downloaded successfully!');
+  // Clear the session data
+  clearSession(sessionId);
+  
+  // Clear the chat UI
+  const chatbox = document.getElementById('chatbox');
+  chatbox.innerHTML = '';
+  
+  // Clear the input field
+  const userInputEl = document.getElementById('userInput');
+  userInputEl.value = '';
+  
+  alert('Session ended and data downloaded successfully!');
+
+  // Redirect to feedback page
+  window.location.href = 'feedback.html';
 });

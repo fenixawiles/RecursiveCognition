@@ -1,15 +1,26 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <title>Feedback</title>
     <link rel="stylesheet" href="styles.css">
-<head><title>Feedback</title></head>
+</head>
 <body>
-  <h1>Thanks for Reflecting with Sonder</h1>
-  <button onclick="openFeedback()">Give Feedback</button>
+    <h1>Thanks for Reflecting with Sonder</h1>
+    <p>Your session data has been saved. We'd love to hear your thoughts about the experience!</p>
+    
+    <button onclick="openFeedback()">Give Feedback</button>
+    <button onclick="startNewSession()">Start New Session</button>
 
-  <script>
-    function openFeedback() {
-      require('electron').shell.openExternal('https://forms.gle/GgTLRR9XE4vPQM2u8');
-    }
-  </script>
+    <script>
+        function openFeedback() {
+            // Open feedback form in a new tab
+            window.open('https://forms.gle/GgTLRR9XE4vPQM2u8', '_blank');
+        }
+        
+        function startNewSession() {
+            // Return to chat page
+            window.location.href = 'chat.html';
+        }
+    </script>
 </body>
 </html>

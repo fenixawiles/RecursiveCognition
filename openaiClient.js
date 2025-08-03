@@ -1,7 +1,7 @@
 // Note: In a production app, never expose your API key in client-side code!
 // This should be handled by a backend server for security.
 // Replace 'YOUR_OPENAI_API_KEY_HERE' with your actual OpenAI API key
-const API_KEY = "YOUR_OPENAI_API_KEY_HERE";
+const API_KEY = "YOUR_API_KEY";
 
 /**
  * Send a chat completion request to OpenAI
