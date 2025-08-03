@@ -53,7 +53,7 @@ function exportLoopLog() {
   };
 }
 
-module.exports = {
+export {
   trackLoop,
   getLoopLog,
   clearLoopLog,
