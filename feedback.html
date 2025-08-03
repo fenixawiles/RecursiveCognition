@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <link rel="stylesheet" href="styles.css">
+<head><title>Feedback</title></head>
+<body>
+  <h1>Thanks for Reflecting with Sonder</h1>
+  <button onclick="openFeedback()">Give Feedback</button>
+
+  <script>
+    function openFeedback() {
+      require('electron').shell.openExternal('https://forms.gle/GgTLRR9XE4vPQM2u8');
+    }
+  </script>
+</body>
+</html>
