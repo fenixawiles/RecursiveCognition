@@ -2,6 +2,12 @@ import { getSession, addMessage, setSession, clearSession } from './sessionManag
 import { countTokens } from './tokenTracker.js';
 import { summarizeContext } from './summarizer.js';
 import { sendChatCompletion } from './openaiClient.js';
+import { 
+  INSIGHT_TYPES, 
+  createInsight, 
+  addInsightToLog, 
+  generateInsightExport 
+} from './insightSchema.js';
 
 const sessionId = 'default-session';
 
@@ -11,16 +17,102 @@ async function initializeApp() {
 }
 initializeApp();
 
+/**
+ * Render a message with insight tagging capability
+ */
+function renderMessage(chatbox, sender, content, messageId) {
+  const messageDiv = document.createElement('div');
+  messageDiv.className = 'message-container';
+  messageDiv.innerHTML = `
+    <div class="message-content">
+      <p><strong>${sender}:</strong> ${content}</p>
+      <div class="insight-controls">
+        <button class="insight-btn" onclick="showInsightDropdown('${messageId}', '${content.replace(/'/g, "\\'")}')">🔍 Tag Insight</button>
+        <div id="insight-dropdown-${messageId}" class="insight-dropdown" style="display: none;">
+          <select id="insight-type-${messageId}">
+            <option value="">Select insight type...</option>
+            ${Object.entries(INSIGHT_TYPES).map(([key, value]) => 
+              `<option value="${value}">${key.replace('_', ' ')}</option>`
+            ).join('')}
+          </select>
+          <input type="text" id="insight-note-${messageId}" placeholder="Optional note..." maxlength="500">
+          <button onclick="tagInsight('${messageId}', '${content.replace(/'/g, "\\'")}')">Tag</button>
+          <button onclick="hideInsightDropdown('${messageId}')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+  chatbox.appendChild(messageDiv);
+  
+  // Auto-scroll to show the latest message
+  chatbox.scrollTop = chatbox.scrollHeight;
+}
+
+/**
+ * Show insight dropdown for a message
+ */
+window.showInsightDropdown = function(messageId, content) {
+  const dropdown = document.getElementById(`insight-dropdown-${messageId}`);
+  dropdown.style.display = 'block';
+};
+
+/**
+ * Hide insight dropdown for a message
+ */
+window.hideInsightDropdown = function(messageId) {
+  const dropdown = document.getElementById(`insight-dropdown-${messageId}`);
+  dropdown.style.display = 'none';
+};
+
+/**
+ * Tag a message as an insight
+ */
+window.tagInsight = function(messageId, content) {
+  const typeSelect = document.getElementById(`insight-type-${messageId}`);
+  const noteInput = document.getElementById(`insight-note-${messageId}`);
+  
+  const insightType = typeSelect.value;
+  const userNote = noteInput.value;
+  
+  if (!insightType) {
+    alert('Please select an insight type.');
+    return;
+  }
+  
+  try {
+    const insight = createInsight(messageId, content, insightType, userNote);
+    const success = addInsightToLog(insight);
+    
+    if (success) {
+      // Visual feedback
+      const messageContainer = document.getElementById(`insight-dropdown-${messageId}`).closest('.message-container');
+      messageContainer.classList.add('insight-tagged');
+      
+      // Show success indicator
+      const successIndicator = document.createElement('span');
+      successIndicator.className = 'insight-success';
+      successIndicator.textContent = `✓ Tagged as ${insightType.replace('-', ' ')}`;
+      messageContainer.querySelector('.insight-controls').appendChild(successIndicator);
+      
+      hideInsightDropdown(messageId);
+    }
+  } catch (error) {
+    alert(`Error tagging insight: ${error.message}`);
+  }
+};
+
 async function sendMessage() {
   const userInputEl = document.getElementById('userInput');
   const userInput = userInputEl.value.trim();
   if (!userInput) return;
 
   const chatbox = document.getElementById('chatbox');
-  chatbox.innerHTML += `<p>You: ${userInput}</p>`;
-  addMessage(sessionId, 'user', userInput);
+  
+  // Add user message with insight tagging capability
+  const userMessage = addMessage(sessionId, 'user', userInput);
+  renderMessage(chatbox, 'You', userInput, userMessage.id);
 
-  // Summarize if we’re over the token limit
+  // Summarize if we're over the token limit
   let messages = getSession(sessionId);
   if (countTokens(messages) > 2500) {
     const summarized = await summarizeContext(messages);
@@ -31,9 +123,9 @@ async function sendMessage() {
   try {
     // Call OpenAI API directly
     const { content: aiResponse } = await sendChatCompletion(getSession(sessionId));
-    addMessage(sessionId, 'assistant', aiResponse);
+    const assistantMessage = addMessage(sessionId, 'assistant', aiResponse);
 
-    chatbox.innerHTML += `<p>Sonder: ${aiResponse}</p>`;
+    renderMessage(chatbox, 'Sonder', aiResponse, assistantMessage.id);
     userInputEl.value = '';
   } catch (err) {
     console.error(err);
@@ -44,20 +136,31 @@ async function sendMessage() {
 document.getElementById('sendButton')
         .addEventListener('click', sendMessage);
 
+// Add Enter key functionality for sending messages
+document.getElementById('userInput')
+        .addEventListener('keypress', function(event) {
+          if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent form submission if inside a form
+            sendMessage();
+          }
+        });
+
 document.getElementById('endSessionButton')
         .addEventListener('click', async () => {
-  // Export current session data
+  // Export current session data including insights
+  const insightData = generateInsightExport();
   const sessionData = {
     sessionId: sessionId,
     messages: getSession(sessionId),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    ...insightData // Include insight log, legend, and statistics
   };
   
   const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'sonder-session-data.json';
+  a.download = `sonder-session-${new Date().toISOString().split('T')[0]}.json`;
   a.click();
   URL.revokeObjectURL(url);
   
@@ -72,7 +175,7 @@ document.getElementById('endSessionButton')
   const userInputEl = document.getElementById('userInput');
   userInputEl.value = '';
   
-  alert('Session ended and data downloaded successfully!');
+  alert(`Session ended and data downloaded successfully! ${insightData.insightStats.total} insights tagged.`);
 
   // Redirect to feedback page
   window.location.href = 'feedback.html';

@@ -1,7 +1,19 @@
 // sessionManager.js
 
+import { clearInsightLog } from './insightSchema.js';
+
 // In-memory chat sessions store
 const sessions = new Map();
+
+// Message counter for generating unique IDs
+let messageCounter = 0;
+
+/**
+ * Generate a unique message ID
+ */
+function generateMessageId() {
+  return `msg_${Date.now()}_${++messageCounter}`;
+}
 
 /**
  * Retrieve the message list for a session, initializing if necessary
@@ -11,6 +23,7 @@ export function getSession(sessionId) {
     // Initialize new session with Sonder's instructions
     sessions.set(sessionId, [
       {
+        id: generateMessageId(),
         role: "system",
         content: `
 
@@ -18,7 +31,8 @@ export function getSession(sessionId) {
         When appropriate, suggest frameworks, reframe the user’s language, or propose next steps for synthesis or articulation. Be direct, efficient, and intellectually generative.
         After each response, consider asking a follow-up that either deepens, reframes, or challenges the user’s prior claim or insight.
         
-        `
+        `,
+        timestamp: new Date().toISOString()
       }
     ]);
   }
@@ -30,7 +44,14 @@ export function getSession(sessionId) {
  */
 export function addMessage(sessionId, role, content) {
   const messages = getSession(sessionId);
-  messages.push({ role, content });
+  const message = {
+    id: generateMessageId(),
+    role,
+    content,
+    timestamp: new Date().toISOString()
+  };
+  messages.push(message);
+  return message; // Return the message with ID for potential insight tagging
 }
 
 /**
@@ -45,4 +66,5 @@ export function setSession(sessionId, newMessages) {
  */
 export function clearSession(sessionId) {
   sessions.delete(sessionId);
+  clearInsightLog(); // Clear insights when clearing session
 }
