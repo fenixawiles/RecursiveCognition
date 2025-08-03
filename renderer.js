@@ -1,5 +1,5 @@
 import { getSession, addMessage, setSession, clearSession } from './sessionManager.js';
-import { countTokens } from './tokenTracker.js';
+import { countTokens, getTokenStats } from './tokenTracker.js';
 import { summarizeContext } from './summarizer.js';
 import { sendChatCompletion } from './openaiClient.js';
 import { 
@@ -8,12 +8,24 @@ import {
   addInsightToLog, 
   generateInsightExport 
 } from './insightSchema.js';
+import { 
+  initializeSession,
+  incrementMessageCount,
+  addTokens,
+  finalizeSession
+} from './sessionMeta.js';
 
 const sessionId = 'default-session';
 
 // Initialize the app - no more Electron dependencies
 async function initializeApp() {
   console.log('Chat app initialized');
+  
+  // Initialize session metadata
+  initializeSession(sessionId, 'explorer', 'concept-development');
+  
+  // Show initial token display
+  updateTokenDisplay();
 }
 initializeApp();
 
@@ -110,27 +122,74 @@ async function sendMessage() {
   
   // Add user message with insight tagging capability
   const userMessage = addMessage(sessionId, 'user', userInput);
+  incrementMessageCount('user');
   renderMessage(chatbox, 'You', userInput, userMessage.id);
 
-  // Summarize if we're over the token limit
+  // Check token usage and optimize context if needed
   let messages = getSession(sessionId);
-  if (countTokens(messages) > 2500) {
-    const summarized = await summarizeContext(messages);
-    setSession(sessionId, summarized);
-    messages = summarized;
+  const tokenStats = getTokenStats(messages);
+  
+  // Lower threshold for more aggressive optimization (1800 instead of 2500)
+  if (tokenStats.totalTokens > 1800) {
+    console.log(`Token limit approaching: ${tokenStats.totalTokens} tokens. Summarizing...`);
+    try {
+      const summarized = await summarizeContext(messages);
+      setSession(sessionId, summarized);
+      messages = summarized;
+      
+      // Visual indicator of compression
+      const compressionNotice = document.createElement('div');
+      compressionNotice.className = 'compression-notice';
+      compressionNotice.textContent = `🗜️ Context compressed (saved ~${tokenStats.totalTokens - countTokens(summarized)} tokens)`;
+      chatbox.appendChild(compressionNotice);
+    } catch (error) {
+      console.error('Summarization failed:', error);
+    }
   }
 
   try {
+    // Track API request tokens
+    const requestTokens = countTokens(getSession(sessionId));
+    addTokens(requestTokens);
+    
     // Call OpenAI API directly
     const { content: aiResponse } = await sendChatCompletion(getSession(sessionId));
     const assistantMessage = addMessage(sessionId, 'assistant', aiResponse);
+    incrementMessageCount('assistant');
+    
+    // Track response tokens
+    const responseTokens = countTokens([assistantMessage]);
+    addTokens(responseTokens);
 
     renderMessage(chatbox, 'Sonder', aiResponse, assistantMessage.id);
     userInputEl.value = '';
+    
+    // Update token display if it exists
+    updateTokenDisplay();
   } catch (err) {
     console.error(err);
     chatbox.innerHTML += `<p>Sonder: Something went wrong on our end.</p>`;
   }
+}
+
+/**
+ * Update token usage display in UI
+ */
+function updateTokenDisplay() {
+  const messages = getSession(sessionId);
+  const stats = getTokenStats(messages);
+  
+  let display = document.getElementById('token-display');
+  if (!display) {
+    display = document.createElement('div');
+    display.id = 'token-display';
+    display.className = 'token-display';
+    document.querySelector('h1').after(display);
+  }
+  
+  display.innerHTML = `
+    <small>📊 Tokens: ${stats.totalTokens} | Messages: ${stats.messageCount} | Efficiency: ${stats.percentOfLimit}%</small>
+  `;
 }
 
 document.getElementById('sendButton')
