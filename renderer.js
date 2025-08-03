@@ -26,8 +26,43 @@ async function initializeApp() {
   
   // Show initial token display
   updateTokenDisplay();
+  
+  // Restore chat history if it exists
+  restoreChatHistory();
 }
 initializeApp();
+
+/**
+ * Restore chat history from localStorage
+ */
+function restoreChatHistory() {
+  const chatbox = document.getElementById('chatbox');
+  const messages = getSession(sessionId);
+  
+  // Skip the system message and render user/assistant messages
+  messages.forEach(message => {
+    if (message.role !== 'system') {
+      const senderName = message.role === 'user' ? 'You' : 'Sonder';
+      renderMessage(chatbox, senderName, message.content, message.id);
+    }
+  });
+  
+  // Show restoration notice if there were messages
+  if (messages.length > 1) { // More than just system message
+    const restoreNotice = document.createElement('div');
+    restoreNotice.className = 'compression-notice';
+    restoreNotice.textContent = `🔄 Chat history restored (${messages.length - 1} messages)`;
+    restoreNotice.style.marginBottom = '1rem';
+    chatbox.insertBefore(restoreNotice, chatbox.firstChild);
+    
+    // Remove notice after 3 seconds
+    setTimeout(() => {
+      if (restoreNotice.parentNode) {
+        restoreNotice.remove();
+      }
+    }, 3000);
+  }
+}
 
 /**
  * Render a message with insight tagging capability
@@ -35,25 +70,79 @@ initializeApp();
 function renderMessage(chatbox, sender, content, messageId) {
   const messageDiv = document.createElement('div');
   messageDiv.className = 'message-container';
-  messageDiv.innerHTML = `
-    <div class="message-content">
-      <p><strong>${sender}:</strong> ${content}</p>
-      <div class="insight-controls">
-        <button class="insight-btn" onclick="showInsightDropdown('${messageId}', '${content.replace(/'/g, "\\'")}')">🔍 Tag Insight</button>
-        <div id="insight-dropdown-${messageId}" class="insight-dropdown" style="display: none;">
-          <select id="insight-type-${messageId}">
-            <option value="">Select insight type...</option>
-            ${Object.entries(INSIGHT_TYPES).map(([key, value]) => 
-              `<option value="${value}">${key.replace('_', ' ')}</option>`
-            ).join('')}
-          </select>
-          <input type="text" id="insight-note-${messageId}" placeholder="Optional note..." maxlength="500">
-          <button onclick="tagInsight('${messageId}', '${content.replace(/'/g, "\\'")}')">Tag</button>
-          <button onclick="hideInsightDropdown('${messageId}')">Cancel</button>
-        </div>
-      </div>
-    </div>
-  `;
+  
+  // Create message content
+  const messageContent = document.createElement('div');
+  messageContent.className = 'message-content';
+  
+  const messageParagraph = document.createElement('p');
+  messageParagraph.innerHTML = `<strong>${sender}:</strong> ${content}`;
+  messageContent.appendChild(messageParagraph);
+  
+  // Create insight controls
+  const insightControls = document.createElement('div');
+  insightControls.className = 'insight-controls';
+  
+  // Create insight button
+  const insightButton = document.createElement('button');
+  insightButton.className = 'insight-btn';
+  insightButton.textContent = '🔍 Tag Insight';
+  insightButton.onclick = () => showInsightDropdown(messageId);
+  
+  // Create dropdown
+  const dropdown = document.createElement('div');
+  dropdown.id = `insight-dropdown-${messageId}`;
+  dropdown.className = 'insight-dropdown';
+  dropdown.style.display = 'none';
+  
+  // Create select for insight types
+  const typeSelect = document.createElement('select');
+  typeSelect.id = `insight-type-${messageId}`;
+  
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Select insight type...';
+  typeSelect.appendChild(defaultOption);
+  
+  Object.entries(INSIGHT_TYPES).forEach(([key, value]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = key.replace('_', ' ');
+    typeSelect.appendChild(option);
+  });
+  
+  // Create note input
+  const noteInput = document.createElement('input');
+  noteInput.type = 'text';
+  noteInput.id = `insight-note-${messageId}`;
+  noteInput.placeholder = 'Optional note...';
+  noteInput.maxLength = 500;
+  
+  // Create tag button
+  const tagButton = document.createElement('button');
+  tagButton.textContent = 'Tag';
+  tagButton.onclick = () => tagInsight(messageId, content);
+  
+  // Create cancel button
+  const cancelButton = document.createElement('button');
+  cancelButton.textContent = 'Cancel';
+  cancelButton.onclick = () => hideInsightDropdown(messageId);
+  
+  // Assemble dropdown
+  dropdown.appendChild(typeSelect);
+  dropdown.appendChild(noteInput);
+  dropdown.appendChild(tagButton);
+  dropdown.appendChild(cancelButton);
+  
+  // Assemble insight controls
+  insightControls.appendChild(insightButton);
+  insightControls.appendChild(dropdown);
+  
+  // Assemble message content
+  messageContent.appendChild(insightControls);
+  messageDiv.appendChild(messageContent);
+  
+  // Add to chatbox
   chatbox.appendChild(messageDiv);
   
   // Auto-scroll to show the latest message
@@ -63,25 +152,34 @@ function renderMessage(chatbox, sender, content, messageId) {
 /**
  * Show insight dropdown for a message
  */
-window.showInsightDropdown = function(messageId, content) {
+function showInsightDropdown(messageId) {
   const dropdown = document.getElementById(`insight-dropdown-${messageId}`);
-  dropdown.style.display = 'block';
-};
+  if (dropdown) {
+    dropdown.style.display = 'block';
+  }
+}
 
 /**
  * Hide insight dropdown for a message
  */
-window.hideInsightDropdown = function(messageId) {
+function hideInsightDropdown(messageId) {
   const dropdown = document.getElementById(`insight-dropdown-${messageId}`);
-  dropdown.style.display = 'none';
-};
+  if (dropdown) {
+    dropdown.style.display = 'none';
+  }
+}
 
 /**
  * Tag a message as an insight
  */
-window.tagInsight = function(messageId, content) {
+function tagInsight(messageId, content) {
   const typeSelect = document.getElementById(`insight-type-${messageId}`);
   const noteInput = document.getElementById(`insight-note-${messageId}`);
+  
+  if (!typeSelect || !noteInput) {
+    alert('Error: Could not find insight form elements.');
+    return;
+  }
   
   const insightType = typeSelect.value;
   const userNote = noteInput.value;
@@ -98,20 +196,27 @@ window.tagInsight = function(messageId, content) {
     if (success) {
       // Visual feedback
       const messageContainer = document.getElementById(`insight-dropdown-${messageId}`).closest('.message-container');
-      messageContainer.classList.add('insight-tagged');
-      
-      // Show success indicator
-      const successIndicator = document.createElement('span');
-      successIndicator.className = 'insight-success';
-      successIndicator.textContent = `✓ Tagged as ${insightType.replace('-', ' ')}`;
-      messageContainer.querySelector('.insight-controls').appendChild(successIndicator);
+      if (messageContainer) {
+        messageContainer.classList.add('insight-tagged');
+        
+        // Show success indicator
+        const successIndicator = document.createElement('span');
+        successIndicator.className = 'insight-success';
+        successIndicator.textContent = `✓ Tagged as ${insightType.replace('-', ' ')}`;
+        
+        const insightControls = messageContainer.querySelector('.insight-controls');
+        if (insightControls) {
+          insightControls.appendChild(successIndicator);
+        }
+      }
       
       hideInsightDropdown(messageId);
     }
   } catch (error) {
+    console.error('Error tagging insight:', error);
     alert(`Error tagging insight: ${error.message}`);
   }
-};
+}
 
 async function sendMessage() {
   const userInputEl = document.getElementById('userInput');
@@ -194,6 +299,35 @@ function updateTokenDisplay() {
 
 document.getElementById('sendButton')
         .addEventListener('click', sendMessage);
+
+// Add Clear Chat functionality
+document.getElementById('clearChatButton')
+        .addEventListener('click', () => {
+          if (confirm('Are you sure you want to clear the chat? This will remove all messages but keep insights.')) {
+            // Clear the chat UI
+            const chatbox = document.getElementById('chatbox');
+            chatbox.innerHTML = '';
+            
+            // Clear session data but keep insights
+            clearSession(sessionId);
+            
+            // Show confirmation
+            const clearNotice = document.createElement('div');
+            clearNotice.className = 'compression-notice';
+            clearNotice.textContent = '🧹 Chat cleared - ready for a fresh start!';
+            chatbox.appendChild(clearNotice);
+            
+            // Remove notice after 3 seconds
+            setTimeout(() => {
+              if (clearNotice.parentNode) {
+                clearNotice.remove();
+              }
+            }, 3000);
+            
+            // Update token display
+            updateTokenDisplay();
+          }
+        });
 
 // Add Enter key functionality for sending messages
 document.getElementById('userInput')

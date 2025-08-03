@@ -32,6 +32,38 @@ export const INSIGHT_TYPE_LEGEND = {
  */
 let insightLog = [];
 
+// LocalStorage key for insights
+const INSIGHTS_STORAGE_KEY = 'sonder_insights';
+
+/**
+ * Save insights to localStorage
+ */
+function saveInsightsToStorage() {
+  try {
+    localStorage.setItem(INSIGHTS_STORAGE_KEY, JSON.stringify(insightLog));
+  } catch (error) {
+    console.warn('Failed to save insights to localStorage:', error);
+  }
+}
+
+/**
+ * Load insights from localStorage
+ */
+function loadInsightsFromStorage() {
+  try {
+    const savedInsights = localStorage.getItem(INSIGHTS_STORAGE_KEY);
+    if (savedInsights) {
+      insightLog = JSON.parse(savedInsights);
+    }
+  } catch (error) {
+    console.warn('Failed to load insights from localStorage:', error);
+    insightLog = []; // Reset to empty array on error
+  }
+}
+
+// Load insights on module initialization
+loadInsightsFromStorage();
+
 /**
  * Factory function to create a valid insight object
  * @param {string} messageId - Unique identifier for the message
@@ -78,6 +110,7 @@ export function addInsightToLog(insight) {
   }
   
   insightLog.push(insight);
+  saveInsightsToStorage(); // Auto-save after adding insight
   console.log(`Insight tagged: ${insight.insightType} for message ${insight.messageId}`);
   return true;
 }
@@ -115,6 +148,7 @@ export function getInsightLog() {
  */
 export function clearInsightLog() {
   insightLog = [];
+  saveInsightsToStorage(); // Auto-save after clearing
   console.log('Insight log cleared');
 }
 
