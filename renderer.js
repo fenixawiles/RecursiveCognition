@@ -83,6 +83,8 @@ import {
 } from './recommendationEngine.js';
 
 import { processBatchInsights } from './insightNotifier.js';
+import { sendChatCompletion } from './openaiClient.js';
+import { exportSessionData } from './researchExport.js';
 
 const sessionId = 'default-session';
 
@@ -699,64 +701,8 @@ document.getElementById('endSessionButton')
   finalizeSession();
   finalizePhaseTracking();
   
-  // Export ALL backend tracked data
-  const insightData = generateInsightExport();
-  const phaseData = generatePhaseExport();
-  const valenceData = generateValenceExport();
-  const originData = generateOriginExport();
-  const impactData = generateImpactExport();
-  const metadataExport = generateMetadataExport();
-  const loopData = exportLoopLog();
-  const compressionData = exportCompressionLog();
-  const currentPhase = getCurrentPhase();
-  
-  const sessionData = {
-    sessionId: sessionId,
-    exportTimestamp: new Date().toISOString(),
-    
-    // Core session data
-    messages: getSession(sessionId),
-    sessionMetadata: metadataExport,
-    
-    // Research tracking modules
-    ...insightData, // Include insight log, legend, and statistics
-    ...phaseData, // Include phase tracking data
-    ...valenceData, // Include tone/valence tracking
-    ...originData, // Include origin/authorship tracking
-    
-    // Backend logs
-    loopTracking: loopData,
-    compressionHistory: compressionData,
-    
-    // Summary metrics
-    currentPhase: currentPhase.phase,
-    sessionSummary: {
-      totalMessages: getSession(sessionId).length - 1, // Exclude system message
-      totalInsights: insightData.insightStats.total,
-      totalPhases: phaseData.phaseSummary.totalPhases,
-      totalValenceEntries: valenceData.statistics.totalTagged,
-      totalOriginEntries: originData.statistics.totalInsights,
-      userOriginatedInsights: originData.statistics.userOriginated,
-      aiOriginatedInsights: originData.statistics.aiOriginated,
-      coConstructedInsights: originData.statistics.coConstructed,
-      collaborationRate: originData.statistics.collaborationRate,
-      totalLoops: loopData.loopLog.length,
-      totalCompressions: compressionData.compressionLog.length,
-      sessionDuration: phaseData.phaseSummary.sessionDuration,
-      averageValence: valenceData.statistics.averageValence,
-      tokenEfficiency: metadataExport.computedMetrics.averageTokensPerMessage
-    }
-  };
-  
-  const blob = new Blob([JSON.stringify(sessionData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `sonder-session-${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  
-  // Clear all session data from all modules
+// Export complete session data using the updated export function
+  await exportSessionData(sessionId);
   clearSession(sessionId);
   clearPhaseData();
   clearValenceData();
