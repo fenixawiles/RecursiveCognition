@@ -84,12 +84,23 @@ function restoreChatHistory() {
   messages.forEach(message => {
     if (message.role !== 'system') {
       const senderName = message.role === 'user' ? 'You' : 'Sonder';
-      renderMessage(chatbox, senderName, message.content, message.id);
+      
+      // Apply formatting to assistant messages during restoration
+      if (message.role === 'assistant') {
+        const formattedContent = formatResponse(message.content);
+        renderMessage(chatbox, senderName, formattedContent, message.id, true);
+      } else {
+        // User messages don't need formatting
+        renderMessage(chatbox, senderName, message.content, message.id);
+      }
     }
   });
   
   // Show restoration notice if there were messages
   if (messages.length > 1) { // More than just system message
+    // Hide welcome message since we have chat history
+    hideWelcomeMessage();
+    
     const restoreNotice = document.createElement('div');
     restoreNotice.className = 'compression-notice';
     restoreNotice.textContent = `🔄 Chat history restored (${messages.length - 1} messages)`;
@@ -107,8 +118,13 @@ function restoreChatHistory() {
 
 /**
  * Render a message with insight tagging capability
+ * @param {HTMLElement} chatbox - The chatbox container
+ * @param {string} sender - The sender name
+ * @param {string} content - The message content
+ * @param {string} messageId - The message ID
+ * @param {boolean} isFormatted - Whether content is already HTML formatted
  */
-function renderMessage(chatbox, sender, content, messageId) {
+function renderMessage(chatbox, sender, content, messageId, isFormatted = false) {
   const messageDiv = document.createElement('div');
   messageDiv.className = 'message-container';
   
@@ -116,9 +132,18 @@ function renderMessage(chatbox, sender, content, messageId) {
   const messageContent = document.createElement('div');
   messageContent.className = 'message-content';
   
-  const messageParagraph = document.createElement('p');
-  messageParagraph.innerHTML = `<strong>${sender}:</strong> ${content}`;
-  messageContent.appendChild(messageParagraph);
+  if (isFormatted) {
+    // Content is already HTML formatted
+    const messageWrapper = document.createElement('div');
+    messageWrapper.className = 'formatted-message';
+    messageWrapper.innerHTML = `<strong>${sender}:</strong> ${content}`;
+    messageContent.appendChild(messageWrapper);
+  } else {
+    // Plain text content
+    const messageParagraph = document.createElement('p');
+    messageParagraph.innerHTML = `<strong>${sender}:</strong> ${content}`;
+    messageContent.appendChild(messageParagraph);
+  }
   
   // Create insight controls
   const insightControls = document.createElement('div');
@@ -204,7 +229,9 @@ function renderMessage(chatbox, sender, content, messageId) {
   chatbox.appendChild(messageDiv);
   
   // Auto-scroll to show the latest message
-  chatbox.scrollTop = chatbox.scrollHeight;
+  requestAnimationFrame(() => {
+    chatbox.scrollTop = chatbox.scrollHeight;
+  });
 }
 
 /**
@@ -309,6 +336,22 @@ function tagInsight(messageId, content) {
   }
 }
 
+/**
+ * Hide the welcome message
+ */
+function hideWelcomeMessage() {
+  const welcomeContainer = document.getElementById('welcome-message');
+  if (welcomeContainer) {
+    welcomeContainer.classList.add('hidden');
+  }
+}
+
+document.getElementById('userInput').addEventListener('input', hideWelcomeMessage);
+
+document.getElementById('sendButton').addEventListener('click', function() {
+  hideWelcomeMessage();
+});
+
 async function sendMessage() {
   const userInputEl = document.getElementById('userInput');
   const userInput = userInputEl.value.trim();
@@ -353,6 +396,11 @@ async function sendMessage() {
     
     // Call OpenAI API directly
     const { content: aiResponse } = await sendChatCompletion(getSession(sessionId));
+    
+    // Format the response based on detected structure
+    const formattedResponse = formatResponse(aiResponse);
+    
+    // Store the original response in session
     const assistantMessage = addMessage(sessionId, 'assistant', aiResponse);
     incrementMessageCount('assistant');
     
@@ -360,13 +408,15 @@ async function sendMessage() {
     const responseTokens = countTokens([assistantMessage]);
     addTokens(responseTokens);
 
-    renderMessage(chatbox, 'Sonder', aiResponse, assistantMessage.id);
+    // Render the formatted version
+    renderMessage(chatbox, 'Sonder', formattedResponse, assistantMessage.id, true);
     
     // Track assistant message in current phase
     const updatedMessages = getSession(sessionId);
     trackMessagePhase(assistantMessage.id, aiResponse, 'assistant', null, updatedMessages.length);
     
     userInputEl.value = '';
+    resetTextareaHeight(); // Reset height after sending
     
     // Update token display if it exists
     updateTokenDisplay();
@@ -428,14 +478,37 @@ document.getElementById('clearChatButton')
           }
         });
 
-// Add Enter key functionality for sending messages
-document.getElementById('userInput')
-        .addEventListener('keypress', function(event) {
-          if (event.key === 'Enter') {
-            event.preventDefault(); // Prevent form submission if inside a form
-            sendMessage();
-          }
-        });
+// Add Enter key functionality for sending messages and auto-expansion for textarea
+const userInput = document.getElementById('userInput');
+
+// Auto-expand textarea as user types
+function autoExpandTextarea() {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+}
+
+// Add input event listener for auto-expansion
+userInput.addEventListener('input', autoExpandTextarea);
+
+// Handle Enter key (send on Enter, new line on Shift+Enter)
+userInput.addEventListener('keydown', function(event) {
+  if (event.key === 'Enter') {
+    if (event.shiftKey) {
+      // Allow new line on Shift+Enter
+      return;
+    } else {
+      // Send message on Enter
+      event.preventDefault();
+      sendMessage();
+    }
+  }
+});
+
+// Reset textarea height after sending
+function resetTextareaHeight() {
+  userInput.style.height = 'auto';
+  userInput.style.height = '24px';
+}
 
 document.getElementById('endSessionButton')
         .addEventListener('click', async () => {
@@ -521,3 +594,298 @@ document.getElementById('endSessionButton')
   // Redirect to feedback page
   window.location.href = 'feedback.html';
 });
+
+/**
+ * Format AI response based on detected structure and content type
+ * @param {string} response - Raw AI response text
+ * @returns {string} Formatted HTML response
+ */
+function formatResponse(response) {
+  // Clean and normalize the response
+  const cleanResponse = response.trim();
+  
+  // Detect and format numbered lists (1. 2. 3. or 1) 2) 3))
+  if (cleanResponse.match(/^\d+[\.)]/m)) {
+    return formatNumberedList(cleanResponse);
+  }
+  
+  // Detect and format bullet lists (- or * at start of lines)
+  if (cleanResponse.match(/^[\-\*•]\s/m)) {
+    return formatBulletList(cleanResponse);
+  }
+  
+  // Detect and format code blocks (```)
+  if (cleanResponse.includes('```')) {
+    return formatCodeBlocks(cleanResponse);
+  }
+  
+  // Detect and format tables (pipe-separated values)
+  if (cleanResponse.match(/\|.*\|/)) {
+    return formatTable(cleanResponse);
+  }
+  
+  // Detect and format step-by-step instructions
+  if (cleanResponse.match(/(step \d+|first|second|third|then|next|finally)/i)) {
+    return formatStepByStep(cleanResponse);
+  }
+  
+  // Detect and format Q&A format
+  if (cleanResponse.match(/^(Q:|A:|Question:|Answer:)/m)) {
+    return formatQandA(cleanResponse);
+  }
+  
+  // Detect and format headings (text followed by colon and content)
+  if (cleanResponse.match(/^[A-Z][^\n]*:$/m)) {
+    return formatWithHeadings(cleanResponse);
+  }
+  
+  // Default: format as structured paragraphs
+  return formatParagraphs(cleanResponse);
+}
+
+/**
+ * Format numbered lists
+ */
+function formatNumberedList(text) {
+  const lines = text.split('\n');
+  let formatted = '';
+  let inList = false;
+  let currentListItems = [];
+  
+  lines.forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.match(/^\d+[\.)]/)) {
+      const content = trimmedLine.replace(/^\d+[\.)\s]*/, '');
+      if (!inList) {
+        inList = true;
+        currentListItems = [];
+      }
+      currentListItems.push(content);
+    } else if (trimmedLine === '') {
+      if (inList) {
+        // Close the current list
+        formatted += '<ol class="formatted-list">';
+        currentListItems.forEach(item => {
+          formatted += `<li>${item}</li>`;
+        });
+        formatted += '</ol>';
+        inList = false;
+        currentListItems = [];
+      }
+      formatted += '<br>';
+    } else {
+      if (inList) {
+        // Close the current list before adding paragraph
+        formatted += '<ol class="formatted-list">';
+        currentListItems.forEach(item => {
+          formatted += `<li>${item}</li>`;
+        });
+        formatted += '</ol>';
+        inList = false;
+        currentListItems = [];
+      }
+      formatted += `<p>${trimmedLine}</p>`;
+    }
+  });
+  
+  // Close any remaining list
+  if (inList && currentListItems.length > 0) {
+    formatted += '<ol class="formatted-list">';
+    currentListItems.forEach(item => {
+      formatted += `<li>${item}</li>`;
+    });
+    formatted += '</ol>';
+  }
+  
+  return formatted;
+}
+
+/**
+ * Format bullet lists
+ */
+function formatBulletList(text) {
+  const lines = text.split('\n');
+  let formatted = '';
+  let inList = false;
+  
+  lines.forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.match(/^[\-\*•]\s/)) {
+      if (!inList) {
+        formatted += '<ul class="formatted-list">';
+        inList = true;
+      }
+      const content = trimmedLine.replace(/^[\-\*•]\s*/, '');
+      formatted += `<li>${content}</li>`;
+    } else if (trimmedLine === '') {
+      if (inList) {
+        formatted += '</ul>';
+        inList = false;
+      }
+      formatted += '<br>';
+    } else {
+      if (inList) {
+        formatted += '</ul>';
+        inList = false;
+      }
+      formatted += `<p>${trimmedLine}</p>`;
+    }
+  });
+  
+  if (inList) {
+    formatted += '</ul>';
+  }
+  
+  return formatted;
+}
+
+/**
+ * Format code blocks
+ */
+function formatCodeBlocks(text) {
+  let formatted = text;
+  
+  // Replace code blocks with proper HTML
+  formatted = formatted.replace(/```([\s\S]*?)```/g, (match, code) => {
+    return `<pre class="code-block"><code>${code.trim()}</code></pre>`;
+  });
+  
+  // Replace inline code
+  formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+  
+  // Format remaining text as paragraphs
+  const lines = formatted.split('\n');
+  let result = '';
+  let inCodeBlock = false;
+  
+  lines.forEach(line => {
+    if (line.includes('<pre class="code-block">')) {
+      inCodeBlock = true;
+      result += line + '\n';
+    } else if (line.includes('</pre>')) {
+      inCodeBlock = false;
+      result += line + '\n';
+    } else if (!inCodeBlock && line.trim() !== '') {
+      result += `<p>${line.trim()}</p>`;
+    } else {
+      result += line + '\n';
+    }
+  });
+  
+  return result;
+}
+
+/**
+ * Format tables (pipe-separated)
+ */
+function formatTable(text) {
+  const lines = text.split('\n').filter(line => line.includes('|'));
+  
+  if (lines.length < 2) {
+    return formatParagraphs(text);
+  }
+  
+  let table = '<table class="formatted-table">';
+  
+  lines.forEach((line, index) => {
+    if (line.match(/^\|?[\s\-\|]+\|?$/)) {
+      // Skip separator lines
+      return;
+    }
+    
+    const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
+    
+    if (index === 0) {
+      table += '<thead><tr>';
+      cells.forEach(cell => {
+        table += `<th>${cell}</th>`;
+      });
+      table += '</tr></thead><tbody>';
+    } else {
+      table += '<tr>';
+      cells.forEach(cell => {
+        table += `<td>${cell}</td>`;
+      });
+      table += '</tr>';
+    }
+  });
+  
+  table += '</tbody></table>';
+  
+  return table;
+}
+
+/**
+ * Format step-by-step instructions
+ */
+function formatStepByStep(text) {
+  const lines = text.split('\n');
+  let formatted = '';
+  
+  lines.forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.match(/^(step \d+|first|second|third|then|next|finally)/i)) {
+      formatted += `<div class="step"><strong>${trimmedLine}</strong></div>`;
+    } else if (trimmedLine !== '') {
+      formatted += `<p class="step-content">${trimmedLine}</p>`;
+    }
+  });
+  
+  return `<div class="step-by-step">${formatted}</div>`;
+}
+
+/**
+ * Format Q&A sections
+ */
+function formatQandA(text) {
+  const lines = text.split('\n');
+  let formatted = '';
+  
+  lines.forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.match(/^(Q:|Question:)/i)) {
+      formatted += `<div class="question"><strong>${trimmedLine}</strong></div>`;
+    } else if (trimmedLine.match(/^(A:|Answer:)/i)) {
+      formatted += `<div class="answer"><strong>${trimmedLine}</strong></div>`;
+    } else if (trimmedLine !== '') {
+      formatted += `<p class="qa-content">${trimmedLine}</p>`;
+    }
+  });
+  
+  return `<div class="qa-format">${formatted}</div>`;
+}
+
+/**
+ * Format text with clear headings
+ */
+function formatWithHeadings(text) {
+  const lines = text.split('\n');
+  let formatted = '';
+  
+  lines.forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine.match(/^[A-Z][^\n]*:$/)) {
+      formatted += `<h3 class="response-heading">${trimmedLine.replace(':', '')}</h3>`;
+    } else if (trimmedLine !== '') {
+      formatted += `<p>${trimmedLine}</p>`;
+    }
+  });
+  
+  return formatted;
+}
+
+/**
+ * Format as structured paragraphs (fallback)
+ */
+function formatParagraphs(text) {
+  const paragraphs = text.split('\n\n').filter(p => p.trim() !== '');
+  
+  if (paragraphs.length === 1) {
+    return `<p>${text}</p>`;
+  }
+  
+  return paragraphs.map(paragraph => {
+    const trimmed = paragraph.trim().replace(/\n/g, ' ');
+    return `<p>${trimmed}</p>`;
+  }).join('');
+}
