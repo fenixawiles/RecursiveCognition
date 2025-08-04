@@ -28,6 +28,6 @@ export function getTokenStats(messages) {
     totalTokens,
     messageCount,
     avgTokensPerMessage,
-    percentOfLimit: Math.round((totalTokens / 4096) * 100) // For GPT-3.5-turbo
+    percentOfLimit: Math.round((totalTokens / 128000) * 100) // For GPT-4o-mini
   };
 }

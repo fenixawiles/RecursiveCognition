@@ -371,8 +371,8 @@ async function sendMessage() {
   // Check token usage and optimize context if needed
   const tokenStats = getTokenStats(messages);
   
-  // Lower threshold for more aggressive optimization (1800 instead of 2500)
-  if (tokenStats.totalTokens > 1800) {
+  // Higher threshold for GPT-4o-mini's larger context window (15000 instead of 1800)
+  if (tokenStats.totalTokens > 15000) {
     console.log(`Token limit approaching: ${tokenStats.totalTokens} tokens. Summarizing...`);
     try {
       const summarized = await summarizeContext(messages);
@@ -437,8 +437,8 @@ function updateTokenDisplay() {
   if (!display) {
     display = document.createElement('div');
     display.id = 'token-display';
-    display.className = 'token-display';
-    document.querySelector('h1').after(display);
+    display.className = 'token-float';
+    document.body.appendChild(display);
   }
   
   display.innerHTML = `

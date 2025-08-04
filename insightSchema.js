@@ -79,6 +79,7 @@ export function createInsight(messageId, messageText, insightType, userNote = ''
   }
 
   return {
+    id: `insight_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     messageId,
     messageText: messageText.substring(0, 1000), // Truncate very long messages
     insightType,
