@@ -1321,12 +1321,22 @@ body {
     
     .token-float {
         position: fixed;
-        bottom: 5.5rem;
-        left: 0.5rem;
+        top: 4rem;
+        right: 0.5rem;
+        left: auto;
+        bottom: auto;
         margin: 0;
         font-size: 0.75rem;
         padding: 0.25rem 0.5rem;
         z-index: 999;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(79, 70, 229, 0.4);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        /* Make it smaller and less intrusive on mobile */
+        max-width: 120px;
+        text-align: center;
     }
     
     /* Adjust main content to account for fixed footer */
