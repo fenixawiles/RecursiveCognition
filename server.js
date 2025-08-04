@@ -82,8 +82,9 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Sonder server is running at http://localhost:${PORT}`);
+    console.log(`📱 Mobile access: Find your IP with 'ipconfig getifaddr en0' and use http://YOUR_IP:${PORT}`);
     console.log(`📁 Serving files from: ${__dirname}`);
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-your-real-key-here') {
         console.warn('⚠️  WARNING: Please set your real OpenAI API key in the .env file');

@@ -1,4 +1,12 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Sonder - AI-Powered Reflection</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -172,11 +180,48 @@
             margin: 0;
             text-align: left;
         }
+        /* Touch-friendly mobile optimizations */
         @media (max-width: 768px) {
             h1 { font-size: 2.5em; }
             .tagline { font-size: 1.2em; }
-            .cta button { padding: 15px 30px; font-size: 1.1em; }
+            .cta button { 
+                padding: 15px 30px; 
+                font-size: 1.1em;
+                min-height: 48px;
+                touch-action: manipulation;
+            }
             .container { padding: 20px 15px; }
+            .hero { margin-bottom: 40px; }
+            .features, .use-cases {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .feature, .use-case {
+                padding: 20px;
+                touch-action: manipulation;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 { font-size: 2em; }
+            .tagline { font-size: 1.1em; }
+            .cta button { 
+                padding: 14px 28px; 
+                font-size: 1em;
+                border-radius: 25px;
+            }
+            .container { padding: 15px 10px; }
+            .hero { margin-bottom: 30px; }
+            .features, .use-cases {
+                gap: 15px;
+            }
+            .feature, .use-case {
+                padding: 15px;
+                border-radius: 12px;
+            }
+            .feature h2, .use-case h2 {
+                font-size: 1.1em;
+            }
         }
     </style>
 </head>
