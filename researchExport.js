@@ -16,10 +16,11 @@ import { generatePhaseExport, getCurrentPhase } from './insightPhases.js';
 import { generateImpactExport } from './insightWeight.js';
 
 /**
- * Export complete session data as a JSON file
+ * Export complete session data with multiple format options
  * @param {string} sessionId - Identifier for the session
+ * @param {string} format - Export format: 'json', 'html', 'markdown', or 'all'
  */
-export async function exportSessionData(sessionId) {
+export async function exportSessionData(sessionId, format = 'all') {
   // Gather all comprehensive data
   const transcript = getSession(sessionId);
   const insightData = generateInsightExport();
@@ -85,15 +86,25 @@ export async function exportSessionData(sessionId) {
     }
   };
 
-  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `sonder-session-${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const dateStamp = new Date().toISOString().split('T')[0];
+  const timeStamp = new Date().toLocaleTimeString().replace(/:/g, '-');
+  
+  // Export based on format preference
+  if (format === 'json' || format === 'all') {
+    exportJSON(exportData, `sonder-session-${dateStamp}.json`);
+  }
+  
+  if (format === 'html' || format === 'all') {
+    const htmlReport = generateHTMLReport(exportData);
+    exportHTML(htmlReport, `sonder-report-${dateStamp}.html`);
+  }
+  
+  if (format === 'markdown' || format === 'all') {
+    const markdownReport = generateMarkdownReport(exportData);
+    exportMarkdown(markdownReport, `sonder-summary-${dateStamp}.md`);
+  }
 
-  console.log('Session data exported successfully with comprehensive analysis');
+  console.log(`Session data exported successfully in ${format} format(s)`);
 }
 
 /**
