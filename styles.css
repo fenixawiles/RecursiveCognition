@@ -1038,6 +1038,82 @@ body {
     margin: 0;
 }
 
+/* Index Page Styles */
+.start-button {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.start-button button {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.start-button button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.start-button button:hover::before {
+    left: 100%;
+}
+
+.start-button button:hover {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
+
+.welcome-card h2 {
+    color: #60a5fa;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem 0;
+    text-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+}
+
+.welcome-card ul {
+    text-align: left;
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.welcome-card li {
+    margin-bottom: 0.5rem;
+    color: #e5e7eb;
+    line-height: 1.5;
+}
+
+.welcome-card strong {
+    color: #60a5fa;
+    text-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
+}
+
+.welcome-card section {
+    margin: 1.5rem 0;
+}
+
+.welcome-card section:last-of-type {
+    margin-bottom: 2rem;
+}
+
 /* Feedback Page Responsive Design */
 @media (max-width: 768px) {
     .feedback-page {
