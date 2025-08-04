@@ -1,3 +1,21 @@
+/**
+ * Initialize mobile specific UX enhancements
+ */
+function initializeMobileEnhancements() {
+    const userInput = document.getElementById('userInput');
+    const chatMain = document.querySelector('.chat-main');
+
+    // Detect when the virtual keyboard is shown
+    userInput.addEventListener('focus', () => {
+        chatMain.style.transform = 'translateY(-50px)'; // Adjust as needed
+    });
+
+    // Detect when the virtual keyboard is hidden
+    userInput.addEventListener('blur', () => {
+        chatMain.style.transform = 'translateY(0)';
+    });
+}
+
 import { getSession, addMessage, setSession, clearSession } from './sessionManager.js';
 import { countTokens, getTokenStats } from './tokenTracker.js';
 import { summarizeContext } from './summarizer.js';
@@ -81,6 +99,9 @@ initializeSession(sessionId, 'explorer', 'concept-development');
   
   // Show initial token display
   updateTokenDisplay();
+  
+  // Initialize mobile enhancements
+  initializeMobileEnhancements();
   
 // Hook into the message processing to detect and notify insights automatically
   // Removed keystroke-based detection to prevent notification flooding

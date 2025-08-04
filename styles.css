@@ -23,10 +23,56 @@ input, textarea, .message-container, .formatted-message {
     user-select: text;
 }
 
-/* Improve scrolling on mobile */
+/* Improve scrolling on mobile and Safari */
 html {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    /* Fix for iOS Safari viewport issues */
+    height: 100%;
+    height: 100vh;
+    height: 100dvh;
+}
+
+/* Enhanced mobile scrolling and keyboard handling */
+@supports (-webkit-touch-callout: none) {
+    /* Safari-specific styles */
+    html {
+        height: -webkit-fill-available;
+    }
+    
+    body {
+        min-height: -webkit-fill-available;
+    }
+}
+
+/* Mobile keyboard handling */
+.chat-main {
+    transition: transform 0.3s ease;
+}
+
+/* Improved mobile scrolling when keyboard is visible */
+@media (max-width: 480px) {
+    /* Ensure proper scrolling behavior */
+    .chat-messages {
+        -webkit-overflow-scrolling: touch;
+        overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    
+    /* Better keyboard handling for iOS */
+    @supports (-webkit-appearance: none) {
+        .chat-footer {
+            /* Use env() for better keyboard handling */
+            padding-bottom: max(0.5rem, env(keyboard-inset-height, 0px));
+            padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+        }
+        
+        body {
+            /* Better viewport handling */
+            height: 100vh;
+            height: 100svh; /* Small viewport height */
+        }
+    }
 }
 
 /* Better touch targets for mobile */
