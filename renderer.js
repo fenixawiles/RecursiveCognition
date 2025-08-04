@@ -1,21 +1,3 @@
-/**
- * Initialize mobile specific UX enhancements
- */
-function initializeMobileEnhancements() {
-    const userInput = document.getElementById('userInput');
-    const chatMain = document.querySelector('.chat-main');
-
-    // Detect when the virtual keyboard is shown
-    userInput.addEventListener('focus', () => {
-        chatMain.style.transform = 'translateY(-50px)'; // Adjust as needed
-    });
-
-    // Detect when the virtual keyboard is hidden
-    userInput.addEventListener('blur', () => {
-        chatMain.style.transform = 'translateY(0)';
-    });
-}
-
 import { getSession, addMessage, setSession, clearSession } from './sessionManager.js';
 import { countTokens, getTokenStats } from './tokenTracker.js';
 import { summarizeContext } from './summarizer.js';
@@ -83,10 +65,27 @@ import {
 } from './recommendationEngine.js';
 
 import { processBatchInsights } from './insightNotifier.js';
-import { sendChatCompletion } from './openaiClient.js';
 import { exportSessionData } from './researchExport.js';
 
 const sessionId = 'default-session';
+
+/**
+ * Initialize mobile specific UX enhancements
+ */
+function initializeMobileEnhancements() {
+    const userInput = document.getElementById('userInput');
+    const chatMain = document.querySelector('.chat-main');
+
+    // Detect when the virtual keyboard is shown
+    userInput.addEventListener('focus', () => {
+        chatMain.style.transform = 'translateY(-50px)'; // Adjust as needed
+    });
+
+    // Detect when the virtual keyboard is hidden
+    userInput.addEventListener('blur', () => {
+        chatMain.style.transform = 'translateY(0)';
+    });
+}
 
 // Initialize the app with a focus on simplicity and ease of use
 async function initializeApp() {

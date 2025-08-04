@@ -143,7 +143,9 @@ const negativePatterns = [
   // Process positive patterns
   positivePatterns.forEach(({ patterns, weight }) => {
     patterns.forEach(pattern => {
-      const matches = (textLower.match(new RegExp(pattern, 'g')) || []).length;
+      // Escape special regex characters
+      const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const matches = (textLower.match(new RegExp(escapedPattern, 'g')) || []).length;
       score += matches * weight;
       wordCount += matches;
     });
@@ -152,7 +154,9 @@ const negativePatterns = [
   // Process negative patterns
   negativePatterns.forEach(({ patterns, weight }) => {
     patterns.forEach(pattern => {
-      const matches = (textLower.match(new RegExp(pattern, 'g')) || []).length;
+      // Escape special regex characters
+      const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const matches = (textLower.match(new RegExp(escapedPattern, 'g')) || []).length;
       score += matches * weight;
       wordCount += matches;
     });
