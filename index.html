@@ -1,42 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <title>Welcome to Sonder</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-<head><title>Sonder Welcome</title></head>
+</head>
 <body>
-  <h1>Welcome to Sonder</h1>
-  <div class="welcome-container">
-    <h1>Welcome to Sonder (Alpha)</h1>
-    <p>Thanks for helping us test Sonder. This is a very early version, and your feedback will help shape what it becomes.</p>
+    <div class="welcome-container">
+        <div class="welcome-card">
+            <div class="welcome-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </div>
 
-    <h2>What to Expect</h2>
-    <p>Sonder is designed for thoughtful, reflective conversation. It’s here to help you explore your thoughts — not to solve problems or give advice. Sometimes it will ask questions. Sometimes it will offer reflections to help you think more clearly. It isn’t perfect (yet). That’s why you’re here.</p>
+            <h2>Welcome to Sonder (Alpha)</h2>
+            <p>Thank you for helping test Sonder. Your feedback is essential in shaping what it becomes.</p>
 
-    <h2>How to Talk to Sonder</h2>
-    <ul>
-        <li>Speak naturally, like you would to a person you trust.</li>
-        <li>Share thoughts, feelings, frustrations, curiosities — anything on your mind.</li>
-        <li>Sonder’s job is to help you reflect, not to fix things.</li>
-    </ul>
+            <div class="welcome-features">
+                <div class="feature-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 11H15M9 15H15M17 21L21 17L17 13M7 21L3 17L7 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Thoughtful Conversations</span>
+                </div>
+                <div class="feature-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Private & Secure</span>
+                </div>
+                <div class="feature-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17 3A2.828 2.828 0 1 1 19.828 5.828L11.828 13.828A4 4 0 1 1 8.172 10.172L16.172 2.172A2.828 2.828 0 0 1 17 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Deep Reflection</span>
+                </div>
+            </div>
 
-    <h2>About Your Privacy</h2>
-    <p><strong>Your conversations are not stored.</strong><br>
-    Nothing you say to Sonder is saved after your session ends. The only thing we collect is your feedback through the feedback form.</p>
+            <div class="welcome-prompt">
+                <p>Explore your thoughts through meaningful dialogue. Share what's on your mind.</p>
+            </div>
 
-    <h2>What We Need From You</h2>
-    <ul>
-        <li>When did Sonder feel natural or human?</li>
-        <li>Where did it feel robotic or off?</li>
-        <li>Did it help you think more clearly, or just fill space?</li>
-        <li>What would you want Sonder to do differently?</li>
-    </ul>
-
-    <h2>This is a Work in Progress</h2>
-    <p>By using this, you’re helping us learn what works, what doesn’t, and what needs to change to make Sonder more useful, more human, and more meaningful.</p>
-
-    <p><strong>Thank you for helping shape the future of this project.</strong></p>
-    <div class="start-Button">
-      <button onclick="location.href='chat.html'">Start Chat</button>
+            <div class="feedback-actions">
+                <button class="feedback-btn primary" onclick="window.location.href='chat.html'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Start Chat
+                </button>
+            </div>
+        </div>
     </div>
-</div>
-  </body>
+</body>
 </html>
