@@ -1,0 +1,29 @@
+{
+  "name": "rc",
+  "version": "1.0.0",
+  "description": "A reflective AI chat application powered by OpenAI's GPT-3.5 Turbo API. Sonder is designed to foster thoughtful, patient, and reflective conversation to help users explore their thoughts, feelings, and contradictions with greater clarity.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fenixawiles/RecursiveCognition.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fenixawiles/RecursiveCognition/issues"
+  },
+  "homepage": "https://github.com/fenixawiles/RecursiveCognition#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^4.21.2",
+    "openai": "^5.11.0"
+  }
+}

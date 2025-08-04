@@ -1,38 +1,39 @@
-// Note: In a production app, never expose your API key in client-side code!
-// This should be handled by a backend server for security.
-// Replace 'YOUR_OPENAI_API_KEY_HERE' with your actual OpenAI API key
-const API_KEY = "MY_API_KEY";
+// OpenAI client for Sonder chat application
+// Now uses secure server-side API endpoint instead of exposing API keys
 
 /**
- * Send a chat completion request to OpenAI
+ * Send a chat completion request to our local server (which proxies to OpenAI)
  * @param {Array<{role: string, content: string}>} messages
- * @returns {Promise<{ content: string }>} The assistant's reply message object
+ * @returns {Promise<{ content: string, usage?: object, model?: string }>} The assistant's reply message object
  */
 export async function sendChatCompletion(messages) {
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
         messages: messages,
-        max_tokens: 500, // Limit response length for efficiency
-        temperature: 0.7,
-        presence_penalty: 0.1 // Encourage variety without waste
+        model: "gpt-4o-mini",
+        max_tokens: 4000, // Increased for more detailed responses
+        temperature: 0.7
       })
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Server API error: ${response.status} ${response.statusText} - ${errorData.error || 'Unknown error'}`);
     }
 
     const data = await response.json();
-    return { content: data.choices[0].message.content };
+    return { 
+      content: data.reply,
+      usage: data.usage,
+      model: data.model
+    };
   } catch (error) {
-    console.error('Error calling OpenAI API:', error);
+    console.error('Error calling chat API:', error);
     throw error;
   }
 }
