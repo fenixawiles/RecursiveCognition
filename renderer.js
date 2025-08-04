@@ -1,3 +1,275 @@
+/**
+ * Show custom export modal
+ * @param {string} sessionId - Session ID
+ * @param {object} insightStats - Insights statistics
+ */
+async function showExportModal(sessionId, insightStats) {
+  const overlay = document.createElement('div');
+  overlay.id = 'export-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+  `;
+
+  const modalCard = document.createElement('div');
+  modalCard.style.cssText = `
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(79, 70, 229, 0.4);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 450px;
+    color: #e5e7eb;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transform: scale(0.95);
+    animation: modalSlideIn 0.3s ease forwards;
+    position: relative;
+    overflow: hidden;
+  `;
+
+  // Add gradient border effect
+  modalCard.innerHTML = `
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.8), rgba(99, 102, 241, 0.8), transparent);"></div>
+    
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📄</div>
+      <h3 style="margin: 0; color: #60a5fa; font-size: 1.3rem; text-shadow: 0 0 20px rgba(96, 165, 250, 0.3);">Export Session Transcript</h3>
+      <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; color: rgba(229, 231, 235, 0.7);">Choose your preferred format for downloading</p>
+    </div>
+    
+    <div style="display: grid; gap: 1rem; margin-bottom: 1.5rem;">
+      <button id="export-html" style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        font-size: 1rem;
+        font-weight: 500;
+      ">
+        <span style="font-size: 1.2rem;">🌐</span>
+        <div>
+          <div>HTML Report</div>
+          <div style="font-size: 0.8rem; opacity: 0.8;">Best for viewing in browsers</div>
+        </div>
+      </button>
+      
+      <button id="export-markdown" style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, #059669, #0891b2);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        font-size: 1rem;
+        font-weight: 500;
+      ">
+        <span style="font-size: 1.2rem;">📝</span>
+        <div>
+          <div>Markdown Summary</div>
+          <div style="font-size: 0.8rem; opacity: 0.8;">Compatible with note-taking apps</div>
+        </div>
+      </button>
+    </div>
+    
+    <button id="skip-export" style="
+      width: 100%;
+      padding: 0.75rem;
+      background: rgba(79, 70, 229, 0.2);
+      border: 1px solid rgba(79, 70, 229, 0.4);
+      border-radius: 8px;
+      color: #e5e7eb;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      font-size: 0.9rem;
+    ">Skip Download</button>
+  `;
+
+  // Add hover effects and animations via JavaScript
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes modalSlideIn {
+      from { transform: scale(0.95) translateY(20px); }
+      to { transform: scale(1) translateY(0); }
+    }
+    
+    #export-html:hover {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4) !important;
+    }
+    
+    #export-markdown:hover {
+      background: linear-gradient(135deg, #06b6d4, #0ea5e9) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4) !important;
+    }
+    
+    #skip-export:hover {
+      background: rgba(79, 70, 229, 0.3) !important;
+      border-color: rgba(79, 70, 229, 0.6) !important;
+      transform: translateY(-1px);
+    }
+  `;
+  document.head.appendChild(style);
+
+  overlay.appendChild(modalCard);
+  document.body.appendChild(overlay);
+
+  document.getElementById('export-html').addEventListener('click', async () => {
+    await exportSessionData(sessionId, 'html');
+    document.body.removeChild(overlay);
+    document.head.removeChild(style);
+  });
+
+  document.getElementById('export-markdown').addEventListener('click', async () => {
+    await exportSessionData(sessionId, 'markdown');
+    document.body.removeChild(overlay);
+    document.head.removeChild(style);
+  });
+
+  document.getElementById('skip-export').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    document.head.removeChild(style);
+  });
+  
+  // Close on overlay click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      document.body.removeChild(overlay);
+      document.head.removeChild(style);
+    }
+  });
+}
+
+async function showCompletionModal(totalInsights) {
+  const overlay = document.createElement('div');
+  overlay.id = 'completion-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+  `;
+
+  const completionCard = document.createElement('div');
+  completionCard.style.cssText = `
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(79, 70, 229, 0.4);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 400px;
+    color: #e5e7eb;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transform: scale(0.95);
+    animation: modalSlideIn 0.3s ease forwards;
+    position: relative;
+    overflow: hidden;
+  `;
+
+  completionCard.innerHTML = `
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.8), rgba(16, 185, 129, 0.8), transparent);"></div>
+    
+    <div style="font-size: 3rem; margin-bottom: 1rem; animation: bounce 2s infinite;">✅</div>
+    <h3 style="margin: 0 0 1rem 0; color: #34d399; font-size: 1.4rem; text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);">Session Complete!</h3>
+    
+    <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
+      <div style="color: #34d399; font-weight: 600; margin-bottom: 0.5rem;">🧠 Insights Tagged</div>
+      <div style="font-size: 1.8rem; font-weight: 700; color: #34d399;">${totalInsights}</div>
+    </div>
+    
+    <p style="margin-bottom: 1.5rem; color: rgba(229, 231, 235, 0.8); line-height: 1.5;">Your session data has been processed and saved. Thank you for exploring with Sonder!</p>
+    
+    <button id="completion-close" style="
+      width: 100%;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #34d399, #10b981);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    ">Continue to Feedback</button>
+  `;
+
+  // Add animations for completion modal
+  const completionStyle = document.createElement('style');
+  completionStyle.textContent = `
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+      60% {
+        transform: translateY(-5px);
+      }
+    }
+    
+    #completion-close:hover {
+      background: linear-gradient(135deg, #10b981, #059669) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4) !important;
+    }
+  `;
+  document.head.appendChild(completionStyle);
+
+  overlay.appendChild(completionCard);
+  document.body.appendChild(overlay);
+
+  document.getElementById('completion-close').addEventListener('click', () => {
+    document.body.removeChild(overlay);
+    document.head.removeChild(completionStyle);
+    window.location.href = 'feedback.html';
+  });
+}
+
 import { getSession, addMessage, setSession, clearSession } from './sessionManager.js';
 import { countTokens, getTokenStats } from './tokenTracker.js';
 import { summarizeContext } from './summarizer.js';
@@ -76,15 +348,17 @@ function initializeMobileEnhancements() {
     const userInput = document.getElementById('userInput');
     const chatMain = document.querySelector('.chat-main');
 
-    // Detect when the virtual keyboard is shown
-    userInput.addEventListener('focus', () => {
-        chatMain.style.transform = 'translateY(-50px)'; // Adjust as needed
-    });
+    if (userInput && chatMain) {
+        // Detect when the virtual keyboard is shown
+        userInput.addEventListener('focus', () => {
+            chatMain.style.transform = 'translateY(-50px)'; // Adjust as needed
+        });
 
-    // Detect when the virtual keyboard is hidden
-    userInput.addEventListener('blur', () => {
-        chatMain.style.transform = 'translateY(0)';
-    });
+        // Detect when the virtual keyboard is hidden
+        userInput.addEventListener('blur', () => {
+            chatMain.style.transform = 'translateY(0)';
+        });
+    }
 }
 
 // Initialize the app with a focus on simplicity and ease of use
@@ -419,11 +693,19 @@ function hideWelcomeMessage() {
   }
 }
 
-document.getElementById('userInput').addEventListener('input', hideWelcomeMessage);
+// Add event listeners with null checks
+const userInputElement = document.getElementById('userInput');
+const sendButtonElement = document.getElementById('sendButton');
 
-document.getElementById('sendButton').addEventListener('click', function() {
-  hideWelcomeMessage();
-});
+if (userInputElement) {
+  userInputElement.addEventListener('input', hideWelcomeMessage);
+}
+
+if (sendButtonElement) {
+  sendButtonElement.addEventListener('click', function() {
+    hideWelcomeMessage();
+  });
+}
 
 async function sendMessage() {
   const userInputEl = document.getElementById('userInput');
@@ -538,75 +820,88 @@ function updateTokenDisplay() {
   `;
 }
 
-document.getElementById('sendButton')
-        .addEventListener('click', sendMessage);
-
-// Add Clear Chat functionality
-document.getElementById('clearChatButton')
-        .addEventListener('click', () => {
-          if (confirm('Are you sure you want to clear the chat? This will remove all messages but keep insights.')) {
-            // Clear the chat UI
-            const chatbox = document.getElementById('chatbox');
-            chatbox.innerHTML = '';
-            
-            // Clear session data but keep insights
-            clearSession(sessionId);
-            
-            // Show confirmation
-            const clearNotice = document.createElement('div');
-            clearNotice.className = 'compression-notice';
-            clearNotice.textContent = '🧹 Chat cleared - ready for a fresh start!';
-            chatbox.appendChild(clearNotice);
-            
-            // Remove notice after 3 seconds
-            setTimeout(() => {
-              if (clearNotice.parentNode) {
-                clearNotice.remove();
-              }
-            }, 3000);
-            
-            // Update token display
-            updateTokenDisplay();
-          }
-        });
-
-// Add Enter key functionality for sending messages and auto-expansion for textarea
-const userInput = document.getElementById('userInput');
-
-// Auto-expand textarea as user types
-function autoExpandTextarea() {
-  userInput.style.height = 'auto';
-  userInput.style.height = Math.min(userInput.scrollHeight, 120) + 'px';
+const sendButtonForMessageEl = document.getElementById('sendButton');
+if (sendButtonForMessageEl) {
+  sendButtonForMessageEl.addEventListener('click', sendMessage);
 }
 
-// Add input event listener for auto-expansion
-userInput.addEventListener('input', autoExpandTextarea);
-
-// Handle Enter key (send on Enter, new line on Shift+Enter)
-userInput.addEventListener('keydown', function(event) {
-  if (event.key === 'Enter') {
-    if (event.shiftKey) {
-      // Allow new line on Shift+Enter
-      return;
-    } else {
-      // Send message on Enter
-      event.preventDefault();
-      sendMessage();
+// Add Clear Chat functionality
+const clearChatButtonEl = document.getElementById('clearChatButton');
+if (clearChatButtonEl) {
+  clearChatButtonEl.addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear the chat? This will remove all messages but keep insights.')) {
+      // Clear the chat UI
+      const chatbox = document.getElementById('chatbox');
+      if (chatbox) {
+        chatbox.innerHTML = '';
+        
+        // Clear session data but keep insights
+        clearSession(sessionId);
+        
+        // Show confirmation
+        const clearNotice = document.createElement('div');
+        clearNotice.className = 'compression-notice';
+        clearNotice.textContent = '🧹 Chat cleared - ready for a fresh start!';
+        chatbox.appendChild(clearNotice);
+        
+        // Remove notice after 3 seconds
+        setTimeout(() => {
+          if (clearNotice.parentNode) {
+            clearNotice.remove();
+          }
+        }, 3000);
+        
+        // Update token display
+        updateTokenDisplay();
+      }
     }
+  });
+}
+
+// Add Enter key functionality for sending messages and auto-expansion for textarea
+const userInputForKeyboard = document.getElementById('userInput');
+
+if (userInputForKeyboard) {
+  // Auto-expand textarea as user types
+  function autoExpandTextarea() {
+    userInputForKeyboard.style.height = 'auto';
+    userInputForKeyboard.style.height = Math.min(userInputForKeyboard.scrollHeight, 120) + 'px';
   }
-});
+
+  // Add input event listener for auto-expansion
+  userInputForKeyboard.addEventListener('input', autoExpandTextarea);
+
+  // Handle Enter key (send on Enter, new line on Shift+Enter)
+  userInputForKeyboard.addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+      if (event.shiftKey) {
+        // Allow new line on Shift+Enter
+        return;
+      } else {
+        // Send message on Enter
+        event.preventDefault();
+        sendMessage();
+      }
+    }
+  });
+}
 
 // Reset textarea height after sending
 function resetTextareaHeight() {
-  userInput.style.height = 'auto';
-  userInput.style.height = '24px';
+  const userInputForReset = document.getElementById('userInput');
+  if (userInputForReset) {
+    userInputForReset.style.height = 'auto';
+    userInputForReset.style.height = '24px';
+  }
 }
 
 // Add mobile stats button functionality
-document.getElementById('mobileStatsButton')
-        .addEventListener('click', () => {
-          showMobileStats();
-        });
+const mobileStatsButtonEl = document.getElementById('mobileStatsButton');
+if (mobileStatsButtonEl) {
+  mobileStatsButtonEl.addEventListener('click', () => {
+    showMobileStats();
+  });
+}
 
 /**
  * Show mobile stats modal/popup
@@ -694,48 +989,44 @@ function showMobileStats() {
     }
   });
 }
-document.getElementById('endSessionButton')
-        .addEventListener('click', async () => {
-  // Finalize all tracking systems
-  finalizeSession();
-  finalizePhaseTracking();
-  
-  // Get current stats before clearing
-  const insightStats = getInsightStats();
-  const currentPhase = getCurrentPhase();
+const endSessionButtonEl = document.getElementById('endSessionButton');
+if (endSessionButtonEl) {
+  endSessionButtonEl.addEventListener('click', async () => {
+    // Finalize all tracking systems
+    finalizeSession();
+    finalizePhaseTracking();
+    
+    // Get current stats before clearing
+    const insightStats = getInsightStats();
+    const currentPhase = getCurrentPhase();
 
-  // Ask the user if they want to download a transcript
-  if (confirm('Would you like to download a session transcript?')) {
-    const format = prompt('Choose export format:\n\n"html" - Best for viewing in web browsers (recommended for readability)\n"markdown" - Text format compatible with note-taking apps\n\nEnter your choice:', 'html');
-    if (format === 'html' || format === 'markdown') {
-      // Export complete session data 
-      await exportSessionData(sessionId, format);
-    } else {
-      alert('Invalid format selected. No file will be downloaded.');
+    // Show custom export modal
+    await showExportModal(sessionId, insightStats);
+     
+    // Clear all session data from all modules
+    clearSession(sessionId);
+    clearPhaseData();
+    clearValenceData();
+    clearOriginData();
+    clearLoopLog();
+    clearCompressionLog();
+    
+    // Clear the chat UI
+    const chatbox = document.getElementById('chatbox');
+    if (chatbox) {
+      chatbox.innerHTML = '';
     }
-  }
-   
-  // Clear all session data from all modules
-  clearSession(sessionId);
-  clearPhaseData();
-  clearValenceData();
-  clearOriginData();
-  clearLoopLog();
-  clearCompressionLog();
-  
-  // Clear the chat UI
-  const chatbox = document.getElementById('chatbox');
-  chatbox.innerHTML = '';
-  
-  // Clear the input field
-  const userInputEl = document.getElementById('userInput');
-  userInputEl.value = '';
-  
-  alert(`Session ended and data processing complete. ${insightStats.total} insights tagged.`);
-
-  // Redirect to feedback page
-  window.location.href = 'feedback.html';
-});
+    
+    // Clear the input field
+    const userInputEl = document.getElementById('userInput');
+    if (userInputEl) {
+      userInputEl.value = '';
+    }
+    
+    // Show completion message with custom modal
+    showCompletionModal(insightStats.total);
+  });
+}
 
 /**
  * Format AI response based on detected structure and content type
