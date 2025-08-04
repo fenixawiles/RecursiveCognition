@@ -6,7 +6,9 @@ import {
   INSIGHT_TYPES, 
   createInsight, 
   addInsightToLog, 
-  generateInsightExport 
+  generateInsightExport, 
+  getInsightStats,
+  autoDetectInsights
 } from './insightSchema.js';
 import {
   initializeSession,
@@ -52,15 +54,27 @@ import {
   generateImpactExport,
   clearImpactData
 } from './insightWeight.js';
+import {
+  checkAchievements,
+  getAchievementStats,
+  clearAchievementData
+} from './achievementSystem.js';
+import {
+  generateRecommendations,
+  generateDailyPrompts
+} from './recommendationEngine.js';
+
+import { processBatchInsights } from './insightNotifier.js';
 
 const sessionId = 'default-session';
 
-// Initialize the app - no more Electron dependencies
+// Initialize the app with a focus on simplicity and ease of use
 async function initializeApp() {
   console.log('Chat app initialized');
   
   // Initialize session metadata
-  initializeSession(sessionId, 'explorer', 'concept-development');
+initializeSession(sessionId, 'explorer', 'concept-development');
+  console.log('Interface has been simplified for a cleaner user experience.');
   
   // Initialize phase tracking
   initializePhaseTracking(sessionId);
@@ -68,6 +82,10 @@ async function initializeApp() {
   // Show initial token display
   updateTokenDisplay();
   
+// Hook into the message processing to detect and notify insights automatically
+  // Removed keystroke-based detection to prevent notification flooding
+  // Insights will now only be detected when messages are actually sent
+
   // Restore chat history if it exists
   restoreChatHistory();
 }
@@ -312,6 +330,9 @@ function tagInsight(messageId, content) {
         );
       }
       
+      // Check achievements after tagging insight
+      checkAchievementsAfterInsight();
+      
       // Visual feedback
       const messageContainer = document.getElementById(`insight-dropdown-${messageId}`).closest('.message-container');
       if (messageContainer) {
@@ -333,6 +354,36 @@ function tagInsight(messageId, content) {
   } catch (error) {
     console.error('Error tagging insight:', error);
     alert(`Error tagging insight: ${error.message}`);
+  }
+}
+
+/**
+ * Check achievements after insight tagging
+ */
+function checkAchievementsAfterInsight() {
+  try {
+    const insightStats = getInsightStats();
+    const messages = getSession(sessionId);
+    const achievementStats = getAchievementStats();
+    
+    // Calculate session statistics for achievement checking
+    const stats = {
+      sessions: 1, // For now, we have single session
+      insights: insightStats.total,
+      breakthroughInsights: insightStats.byType?.breakthrough || 0,
+      coConstructedInsights: insightStats.byType?.collaboration || 0, // Approximate
+      singleSessionMessages: messages.length - 1, // Exclude system message
+      singleSessionDuration: Date.now() - new Date().getTime() // Approximate
+    };
+    
+    // Check for new achievements
+    const newAchievements = checkAchievements(stats);
+    
+    if (newAchievements.length > 0) {
+      console.log(`🏆 ${newAchievements.length} new achievement(s) unlocked!`);
+    }
+  } catch (error) {
+    console.warn('Error checking achievements:', error);
   }
 }
 
@@ -363,6 +414,24 @@ async function sendMessage() {
   const userMessage = addMessage(sessionId, 'user', userInput);
   incrementMessageCount('user');
   renderMessage(chatbox, 'You', userInput, userMessage.id);
+  
+  // Auto-detect insights in user message (only when actually sent)
+  try {
+    const insights = autoDetectInsights(userMessage.id, userInput);
+    if (insights.length > 0) {
+      insights.forEach(insight => addInsightToLog(insight));
+      processBatchInsights(insights);
+    }
+  } catch (error) {
+    console.warn('Error in auto-insight detection for user message:', error);
+  }
+  
+  // Auto-predict valence for user message
+  try {
+    autoPredictValence(userMessage.id, userInput);
+  } catch (error) {
+    console.warn('Error in auto-valence prediction for user message:', error);
+  }
   
   // Track message in current phase
   let messages = getSession(sessionId);
@@ -602,7 +671,19 @@ document.getElementById('endSessionButton')
  */
 function formatResponse(response) {
   // Clean and normalize the response
-  const cleanResponse = response.trim();
+  let cleanResponse;
+  
+  // Try to use markdown parsing if available
+  if (typeof marked !== 'undefined') {
+    try {
+      cleanResponse = marked.parse(response.trim());
+    } catch (error) {
+      console.warn('Markdown parsing failed, using plain text:', error);
+      cleanResponse = response.trim();
+    }
+  } else {
+    cleanResponse = response.trim();
+  }
   
   // Detect and format numbered lists (1. 2. 3. or 1) 2) 3))
   if (cleanResponse.match(/^\d+[\.)]/m)) {

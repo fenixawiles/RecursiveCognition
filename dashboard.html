@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sonder Analytics Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="dashboard.js"></script>
+</head>
+<body>
+    <!-- Header with navigation -->
+    <header class="dashboard-header">
+        <div class="brand">
+            <h1>Sonder Analytics</h1>
+            <p class="subtitle">Reflective Intelligence Dashboard</p>
+        </div>
+        <nav class="header-nav">
+            <a href="chat.html" class="nav-btn">New Session</a>
+            <a href="#export" class="nav-btn" id="exportDataBtn">Export Data</a>
+            <button id="clearAllDataBtn" class="nav-btn danger">Reset Analytics</button>
+        </nav>
+    </header>
+
+    <main class="dashboard-main">
+        <!-- Key Metrics Overview -->
+        <section class="metrics-overview">
+            <div class="metric-card">
+                <div class="metric-icon">📊</div>
+                <div class="metric-content">
+                    <h3 id="totalSessions">0</h3>
+                    <p>Total Sessions</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">💡</div>
+                <div class="metric-content">
+                    <h3 id="totalInsights">0</h3>
+                    <p>Insights Captured</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">🎯</div>
+                <div class="metric-content">
+                    <h3 id="breakthroughRate">0%</h3>
+                    <p>Breakthrough Rate</p>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">🤝</div>
+                <div class="metric-content">
+                    <h3 id="collaborationRate">0%</h3>
+                    <p>Co-construction Rate</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Progress & Engagement Section -->
+        <section class="progress-section">
+            <div class="section-header">
+                <h2>Progress & Engagement</h2>
+                <div class="achievement-badges" id="achievementBadges">
+                    <!-- Achievement badges will be populated here -->
+                </div>
+            </div>
+            
+            <div class="progress-grid">
+                <!-- Session Timeline -->
+                <div class="chart-container">
+                    <h3>Session Activity Timeline</h3>
+                    <canvas id="sessionTimelineChart"></canvas>
+                    <div class="chart-insights" id="timelineInsights"></div>
+                </div>
+
+                <!-- Insight Development Phases -->
+                <div class="chart-container">
+                    <h3>Insight Development Phases</h3>
+                    <canvas id="phaseDistributionChart"></canvas>
+                    <div class="phase-legend" id="phaseLegend"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Deep Dive -->
+        <section class="analytics-section">
+            <h2>Analytical Intelligence</h2>
+            
+            <div class="analytics-grid">
+                <!-- Insight Attribution -->
+                <div class="chart-container">
+                    <h3>Insight Attribution</h3>
+                    <canvas id="attributionChart"></canvas>
+                    <div class="attribution-summary" id="attributionSummary"></div>
+                </div>
+
+                <!-- Emotional Valence Trends -->
+                <div class="chart-container">
+                    <h3>Emotional Valence Trends</h3>
+                    <canvas id="valenceChart"></canvas>
+                    <div class="valence-summary" id="valenceSummary"></div>
+                </div>
+
+                <!-- Impact Distribution -->
+                <div class="chart-container">
+                    <h3>Impact Distribution</h3>
+                    <canvas id="impactChart"></canvas>
+                    <div class="impact-analysis" id="impactAnalysis"></div>
+                </div>
+
+                <!-- Productivity Metrics -->
+                <div class="chart-container">
+                    <h3>Productivity Metrics</h3>
+                    <div class="productivity-stats" id="productivityStats">
+                        <div class="stat-row">
+                            <span class="stat-label">Average Session Duration</span>
+                            <span class="stat-value" id="avgDuration">--</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Insights per Session</span>
+                            <span class="stat-value" id="insightsPerSession">--</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Token Efficiency</span>
+                            <span class="stat-value" id="tokenEfficiency">--</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Recursive Loops</span>
+                            <span class="stat-value" id="recursiveLoops">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommendations & Next Steps -->
+        <section class="recommendations-section">
+            <h2>Intelligent Recommendations</h2>
+            <div class="recommendations-grid" id="recommendationsGrid">
+                <!-- Recommendations will be populated here -->
+            </div>
+        </section>
+
+        <!-- Recent Activity -->
+        <section class="activity-section">
+            <h2>Recent Activity</h2>
+            <div class="activity-feed" id="activityFeed">
+                <!-- Recent activity will be populated here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Export Analytics Data</h3>
+                <button class="modal-close" id="closeExportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-options">
+                    <label class="export-option">
+                        <input type="checkbox" checked id="exportInsights">
+                        <span>Insight Analytics</span>
+                    </label>
+                    <label class="export-option">
+                        <input type="checkbox" checked id="exportSessions">
+                        <span>Session Data</span>
+                    </label>
+                    <label class="export-option">
+                        <input type="checkbox" checked id="exportMetrics">
+                        <span>Performance Metrics</span>
+                    </label>
+                    <label class="export-option">
+                        <input type="checkbox" id="exportCharts">
+                        <span>Chart Data</span>
+                    </label>
+                </div>
+                <div class="export-format">
+                    <label>Export Format:</label>
+                    <select id="exportFormat">
+                        <option value="json">JSON (Developer)</option>
+                        <option value="csv">CSV (Analysis)</option>
+                        <option value="report">Executive Report</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelExport" class="btn-secondary">Cancel</button>
+                <button id="confirmExport" class="btn-primary">Export Data</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,58 +1,225 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Welcome to Sonder</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a3e 25%, #26314e 50%, #1f4670 75%, #634393 100%);
+            background-attachment: fixed;
+            color: #e5e7eb;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        h1 {
+            font-size: 4em;
+            font-weight: 300;
+            margin-bottom: 0.3em;
+            color: #fff;
+            text-shadow: 0 0 30px rgba(96, 165, 250, 0.4), 0 0 60px rgba(167, 139, 250, 0.2);
+        }
+        .tagline {
+            font-size: 1.4em;
+            line-height: 1.6em;
+            color: #a5b4fc;
+            margin-bottom: 2em;
+            opacity: 0.9;
+        }
+        .cta {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 80px;
+        }
+        .cta button {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+            color: #fff;
+            border: none;
+            padding: 18px 36px;
+            border-radius: 50px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4), 
+                        0 16px 40px rgba(124, 58, 237, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .cta button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s;
+        }
+        .cta button:hover::before {
+            left: 100%;
+        }
+        .cta button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(79, 70, 229, 0.5), 
+                        0 20px 50px rgba(124, 58, 237, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+        .content-sections {
+            display: grid;
+            gap: 40px;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 60px;
+        }
+        .feature {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3),
+                        0 16px 40px rgba(79, 70, 229, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .feature::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.6), transparent);
+        }
+        .feature:hover {
+            transform: translateY(-5px);
+            border-color: rgba(79, 70, 229, 0.5);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4),
+                        0 20px 50px rgba(79, 70, 229, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+        .feature h2 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
+        }
+        .feature p {
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin: 0;
+            text-align: left;
+        }
+        .use-cases {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        .use-case {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2),
+                        0 12px 30px rgba(167, 139, 250, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .use-case::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.6), transparent);
+        }
+        .use-case:hover {
+            transform: translateY(-3px);
+            border-color: rgba(167, 139, 250, 0.5);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3),
+                        0 16px 40px rgba(167, 139, 250, 0.15);
+        }
+        .use-case h2 {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #a78bfa;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(167, 139, 250, 0.3);
+        }
+        .use-case p {
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin: 0;
+            text-align: left;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5em; }
+            .tagline { font-size: 1.2em; }
+            .cta button { padding: 15px 30px; font-size: 1.1em; }
+            .container { padding: 20px 15px; }
+        }
+    </style>
 </head>
 <body>
-    <div class="welcome-container">
-        <div class="welcome-card">
-            <div class="welcome-icon">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                </svg>
+    <div class="container">
+        <div class="hero">
+            <h1>Sonder</h1>
+            <p class="tagline">Discover insights from your conversations through AI-powered reflection and analysis.</p>
+            
+            <div class="cta">
+                <button onclick="window.location.href='chat.html'">🚀 Start Your Journey</button>
             </div>
+        </div>
 
-            <h2>Welcome to Sonder (Alpha)</h2>
-            <p>Thank you for helping test Sonder. Your feedback is essential in shaping what it becomes.</p>
-
-            <div class="welcome-features">
-                <div class="feature-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 11H15M9 15H15M17 21L21 17L17 13M7 21L3 17L7 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span>Thoughtful Conversations</span>
+        <div class="content-sections">
+            <div class="features">
+                <div class="feature">
+                    <h2>Real-time Insights</h2>
+                    <p>Automatically detect breakthrough moments, reframes, and contradictions as you think through problems.</p>
                 </div>
-                <div class="feature-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span>Private & Secure</span>
+                <div class="feature">
+                    <h2>Emotion Tracking</h2>
+                    <p>Analyze emotional tone and shifts throughout your conversation for deeper understanding.</p>
                 </div>
-                <div class="feature-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17 3A2.828 2.828 0 1 1 19.828 5.828L11.828 13.828A4 4 0 1 1 8.172 10.172L16.172 2.172A2.828 2.828 0 0 1 17 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span>Deep Reflection</span>
+                <div class="feature">
+                    <h2>Session Analytics</h2>
+                    <p>Keep track of your intellectual journey with detailed session summaries and insight patterns.</p>
                 </div>
             </div>
-
-            <div class="welcome-prompt">
-                <p>Explore your thoughts through meaningful dialogue. Share what's on your mind.</p>
-            </div>
-
-            <div class="feedback-actions">
-                <button class="feedback-btn primary" onclick="window.location.href='chat.html'">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    Start Chat
-                </button>
+            
+            <div class="use-cases">
+                <div class="use-case">
+                    <h2>For Researchers</h2>
+                    <p>Explore insights during creative exploration and identify recurring themes in your thinking.</p>
+                </div>
+                <div class="use-case">
+                    <h2>For Personal Growth</h2>
+                    <p>Gain clarity on complex decisions and track emotional well-being through reflection.</p>
+                </div>
+                <div class="use-case">
+                    <h2>For Creative Work</h2>
+                    <p>Break through creative blocks and capture spontaneous ideas with guided dialogue.</p>
+                </div>
             </div>
         </div>
     </div>

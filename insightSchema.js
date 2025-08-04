@@ -1,5 +1,8 @@
 // insightSchema.js
 // Module for structured insight logging during RCIP research sessions
+// Now includes automatic detection of insights
+
+import { classifyPrompt } from './promptClassifier.js';
 
 /**
  * Predefined insight types with their definitions
@@ -88,6 +91,126 @@ export function createInsight(messageId, messageText, insightType, userNote = ''
     timestamp: new Date().toISOString(),
     sessionTimestamp: Date.now() // For relative timing analysis
   };
+}
+
+/**
+ * Automatically detect insights from a message
+ * @param {string} messageId - Unique identifier for the message
+ * @param {string} messageText - The original message content
+ * @returns {Array} - Array of detected insight objects
+ */
+export function autoDetectInsights(messageId, messageText) {
+  // Enhanced heuristic-based detection with real conversation patterns
+  const detectedInsights = [];
+  const lowerText = messageText.toLowerCase();
+
+  // BREAKTHROUGH indicators - moments of realization and clarity
+  const breakthroughIndicators = [
+    "I just realized", "that's why", "it makes sense now", "oh wait", "actually",
+    "the key insight is", "I think I see", "it clicked", "suddenly", "aha",
+    "I get it now", "the real issue is", "what I'm really saying is",
+    "the core problem is", "I finally understand", "it's becoming clear",
+    "the breakthrough is", "I see the connection", "that explains"
+  ];
+  if (breakthroughIndicators.some(indicator => lowerText.includes(indicator))) {
+    detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.BREAKTHROUGH));
+  }
+
+  // REFRAME indicators - perspective shifts and reconceptualization
+  const reframeIndicators = [
+    "what if I looked at it like", "maybe it's not about", "it's actually more about",
+    "the real value is", "instead of thinking", "rather than", "what if",
+    "maybe the point is", "perhaps", "could it be that", "I'm starting to think",
+    "on second thought", "looking at it differently", "another way to see this",
+    "reframing this", "shifting perspective", "thinking about it as",
+    "maybe I should", "what if we", "instead", "alternatively",
+    "the llm isn't the point", "isn't the point", "the real", "actually about"
+  ];
+  if (reframeIndicators.some(indicator => lowerText.includes(indicator))) {
+    detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.REFRAME));
+  }
+
+  // CONTRADICTION indicators - tensions and conflicting ideas
+  const contradictionIndicators = [
+    'however', 'but', 'on the other hand', 'nevertheless', "but I also think", 
+    "that doesn't match", "yet", "although", "despite", "even though",
+    "conflicted", "torn between", "paradox", "contradiction", "inconsistent",
+    "doesn't align", "at odds", "competing", "tension", "both true"
+  ];
+  if (contradictionIndicators.some(indicator => lowerText.includes(indicator))) {
+    detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.CONTRADICTION));
+  }
+
+  // META-SHIFT indicators - thinking about thinking, process awareness
+  const metaIndicators = [
+    "I notice I keep returning to", "this reminds me of a pattern",
+    "I keep coming back to", "the pattern I see", "meta", "thinking about how",
+    "my process", "the way I'm thinking", "I realize I'm", "I tend to",
+    "I shouldn't be trying to", "I should show them", "my approach",
+    "how I'm approaching", "the method", "the strategy", "my thinking",
+    "I notice", "pattern", "recurring", "again and again", "keeps happening"
+  ];
+  if (metaIndicators.some(indicator => lowerText.includes(indicator))) {
+    detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.META_SHIFT));
+  }
+
+  // COMPRESSION indicators - synthesis and distillation
+  const compressionIndicators = [
+    "in essence", "basically", "fundamentally", "at its core", "boils down to",
+    "the essence is", "simply put", "in summary", "the key is", "bottom line",
+    "what it really means", "stripped down", "the heart of", "comes down to",
+    "essentially", "ultimately", "the main thing", "core insight",
+    "can let the user just", "just", "simply", "all comes down to"
+  ];
+  if (compressionIndicators.some(indicator => lowerText.includes(indicator))) {
+    detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.COMPRESSION));
+  }
+
+  // ABSTRACTION indicators - moving to higher levels
+  const abstractionIndicators = [
+    "in general", "more broadly", "at a higher level", "stepping back",
+    "bigger picture", "zoom out", "conceptually", "theoretically",
+    "the principle", "the concept", "universally", "applies to",
+    "pattern across", "theme", "underlying", "fundamental", "systemic"
+  ];
+  if (abstractionIndicators.some(indicator => lowerText.includes(indicator))) {
+    detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.ABSTRACTION));
+  }
+
+  // STRUCTURAL-ECHO indicators - recursive patterns
+  const structuralEchoIndicators = [
+    "like before", "similar to", "reminds me of", "same pattern", "echoes",
+    "mirrors", "parallel", "analogous", "recurring theme", "comes up again",
+    "seen this before", "familiar", "repeating", "cycle", "loop",
+    "back to", "returning to", "circles back", "revisiting"
+  ];
+  if (structuralEchoIndicators.some(indicator => lowerText.includes(indicator))) {
+    detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.STRUCTURAL_ECHO));
+  }
+
+  // Enhanced pattern matching for complex insights
+  // Check for decision-making language that indicates breakthrough
+  if (/I (should|will|need to|have to|must)/.test(lowerText) && 
+      /not|stop|change|shift|move|start/.test(lowerText)) {
+    if (!detectedInsights.some(insight => insight.insightType === INSIGHT_TYPES.BREAKTHROUGH)) {
+      detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.BREAKTHROUGH));
+    }
+  }
+
+  // Check for value/purpose realization patterns
+  if (/(the value|purpose|point) (is|isn't|might be)/.test(lowerText)) {
+    if (!detectedInsights.some(insight => insight.insightType === INSIGHT_TYPES.REFRAME)) {
+      detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.REFRAME));
+    }
+  }
+
+  // Use prompt classifier for additional types (avoid duplicates)
+  const promptType = classifyPrompt(messageText);
+  if (promptType === 'META' && !detectedInsights.some(insight => insight.insightType === INSIGHT_TYPES.META_SHIFT)) {
+    detectedInsights.push(createInsight(messageId, messageText, INSIGHT_TYPES.META_SHIFT));
+  }
+
+  return detectedInsights;
 }
 
 /**

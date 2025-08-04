@@ -1266,3 +1266,155 @@ body {
         padding: 0.25rem 0.5rem;
     }
 }
+
+/* Notification System Styles */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.insight-notification {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    min-width: 320px;
+    max-width: 400px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    pointer-events: auto;
+    backdrop-filter: blur(10px);
+}
+
+.insight-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.insight-notification.hide {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.notification-content {
+    position: relative;
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.notification-icon {
+    font-size: 20px;
+    margin-right: 8px;
+}
+
+.notification-title {
+    flex-grow: 1;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.notification-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.notification-message {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.4;
+    opacity: 0.9;
+}
+
+.notification-context {
+    margin: 8px 0;
+    font-size: 12px;
+    opacity: 0.7;
+    font-style: italic;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.notification-action {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.notification-action:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.notification-action.secondary {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.notification-action.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced message container styles for insight tagging */
+.message-container.insight-tagged {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-left: 4px solid #667eea;
+}
+
+/* Enhanced insight controls for simplified UX */
+.insight-controls {
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.message-container:hover .insight-controls {
+    opacity: 1;
+}
+
+/* Responsive design for notifications */
+@media (max-width: 480px) {
+    .notification-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .insight-notification {
+        min-width: auto;
+        max-width: none;
+    }
+}

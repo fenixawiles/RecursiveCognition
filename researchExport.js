@@ -1,8 +1,11 @@
 // researchExport.js
 // Master script to package session data for export
+// Now includes TL;DR generation functionality
 
-import { generateInsightExport } from './insightSchema.js';
+import { generateInsightExport, getInsightStats } from './insightSchema.js';
 import { exportLoopLog } from './loopTracker.js';
+import { getAllPhases } from './insightPhases.js';
+import { getNotificationStats } from './insightNotifier.js';
 import { generateMetadataExport } from './sessionMeta.js';
 import { exportCompressionLog } from './compressionLog.js';
 import { getSession } from './sessionManager.js';
@@ -18,6 +21,8 @@ export async function exportSessionData(sessionId) {
   const metadata = generateMetadataExport();
   const compressionData = exportCompressionLog();
 
+  const tldrSummary = generateTLDR();
+
   const exportData = {
     sessionId,
     chatTranscript: transcript,
@@ -25,7 +30,7 @@ export async function exportSessionData(sessionId) {
     loopLog: loopData.loopLog,
     sessionMeta: metadata,
     compressionLog: compressionData.compressionLog,
-    summary: 'Auto-generated summary of session content'
+    tldrSummary: tldrSummary
   };
 
   const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -37,5 +42,29 @@ export async function exportSessionData(sessionId) {
   URL.revokeObjectURL(url);
 
   console.log('Session data exported successfully');
+}
+
+/**
+ * Generate TL;DR summary for the session
+ * @returns {string} Brief summary of key insights and metrics
+ */
+function generateTLDR() {
+  const insightStats = getInsightStats();
+  const phaseData = getAllPhases();
+  const notificationStats = getNotificationStats();
+
+  return `
+  Key Insights:
+  - Total Insights: ${insightStats.total}
+  - Breakthroughs: ${insightStats.byType['breakthrough'] || 0}
+
+  Phase Overview:
+  - Total Phases: ${phaseData.phases.length}
+  - Current Phase: ${phaseData.currentPhase}
+
+  Notification Details:
+  - Notifications Shown: ${notificationStats.queueLength}
+  - Active Notifications: ${notificationStats.isShowingNotification ? 'Yes' : 'No'}
+  `;
 }
 

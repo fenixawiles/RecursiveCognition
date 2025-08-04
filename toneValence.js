@@ -112,29 +112,33 @@ export function predictValence(text) {
   let score = 0;
   let wordCount = 0;
   
-  // Positive indicators
-  const positivePatterns = [
-    // Very positive (+2)
-    { patterns: ['amazing', 'excellent', 'fantastic', 'breakthrough', 'brilliant', 'perfect', 'love this', 'incredible'], weight: 2 },
-    // Positive (+1)
-    { patterns: ['good', 'great', 'nice', 'helpful', 'useful', 'interesting', 'clear', 'makes sense', 'understand', 'progress'], weight: 1 },
-    // Excitement indicators
-    { patterns: ['!'], weight: 0.5 },
-    // Confidence indicators
-    { patterns: ['definitely', 'absolutely', 'clearly', 'obviously'], weight: 0.3 }
-  ];
-  
-  // Negative indicators
-  const negativePatterns = [
-    // Very negative (-2)
-    { patterns: ['terrible', 'awful', 'hate', 'impossible', 'hopeless', 'frustrated', 'stuck', 'confused'], weight: -2 },
-    // Negative (-1)
-    { patterns: ['difficult', 'hard', 'problem', 'issue', 'wrong', 'bad', 'not sure', 'uncertain', 'doubt'], weight: -1 },
-    // Uncertainty indicators
-    { patterns: ['maybe', 'perhaps', 'might', 'not sure', 'i think', 'i guess'], weight: -0.3 },
-    // Question indicators (slight negative as they indicate uncertainty)
-    { patterns: ['?'], weight: -0.2 }
-  ];
+// Positive indicators
+const positivePatterns = [
+  // Very positive (+2)
+  { patterns: ['amazing', 'excellent', 'fantastic', 'breakthrough', 'brilliant', 'perfect', 'love this', 
+               'incredible', 'excited', 'thrilled', 'ecstatic', 'euphoric', 'elated'], weight: 2 },
+  // Positive (+1)
+  { patterns: ['good', 'great', 'nice', 'helpful', 'useful', 'interesting', 'clear', 'makes sense', 
+               'understand', 'progress', 'positive', 'hopeful', 'encouraged', 'reassured'], weight: 1 },
+  // Excitement indicators
+  { patterns: ['!'], weight: 0.5 },
+  // Confidence indicators
+  { patterns: ['definitely', 'absolutely', 'clearly', 'obviously', 'certainly', 'assuredly'], weight: 0.3 }
+];
+
+// Negative indicators
+const negativePatterns = [
+  // Very negative (-2)
+  { patterns: ['terrible', 'awful', 'hate', 'impossible', 'hopeless', 'frustrated', 'stuck', 'confused',
+               'angry', 'furious', 'enraged', 'disgusted'], weight: -2 },
+  // Negative (-1)
+  { patterns: ['difficult', 'hard', 'problem', 'issue', 'wrong', 'bad', 'not sure', 'uncertain', 'doubt',
+               'uncomfortable', 'uneasy', 'nervous', 'worried', 'anxious'], weight: -1 },
+  // Uncertainty indicators
+  { patterns: ['maybe', 'perhaps', 'might', 'not sure', 'i think', 'i guess', 'unclear', 'unsure'], weight: -0.3 },
+  // Question indicators (slight negative as they indicate uncertainty)
+  { patterns: ['?'], weight: -0.2 }
+];
   
   // Process positive patterns
   positivePatterns.forEach(({ patterns, weight }) => {
