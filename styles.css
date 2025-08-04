@@ -1216,6 +1216,11 @@ body {
     }
 }
 
+/* Hide stats button on desktop, show on mobile */
+.stats-btn {
+    display: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .chat-header {

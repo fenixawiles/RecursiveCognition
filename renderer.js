@@ -579,6 +579,99 @@ function resetTextareaHeight() {
   userInput.style.height = '24px';
 }
 
+// Add mobile stats button functionality
+document.getElementById('mobileStatsButton')
+        .addEventListener('click', () => {
+          showMobileStats();
+        });
+
+/**
+ * Show mobile stats modal/popup
+ */
+function showMobileStats() {
+  const messages = getSession(sessionId);
+  const tokenStats = getTokenStats(messages);
+  const insightStats = getInsightStats();
+  
+  // Create modal overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'stats-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+  `;
+  
+  // Create stats card
+  const statsCard = document.createElement('div');
+  statsCard.style.cssText = `
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(79, 70, 229, 0.4);
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-width: 90vw;
+    width: 100%;
+    max-width: 400px;
+    color: #e5e7eb;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  `;
+  
+  statsCard.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h3 style="margin: 0; color: #60a5fa; font-size: 1.2rem;">📊 Session Stats</h3>
+      <button id="close-stats" style="background: none; border: none; color: #e5e7eb; font-size: 1.5rem; cursor: pointer; padding: 0.25rem;">×</button>
+    </div>
+    
+    <div style="display: grid; gap: 0.75rem;">
+      <div style="padding: 0.75rem; background: rgba(79, 70, 229, 0.1); border-radius: 8px; border: 1px solid rgba(79, 70, 229, 0.2);">
+        <div style="font-size: 0.8rem; color: #a78bfa; margin-bottom: 0.25rem;">Messages</div>
+        <div style="font-size: 1.1rem; font-weight: 600;">${tokenStats.messageCount}</div>
+      </div>
+      
+      <div style="padding: 0.75rem; background: rgba(79, 70, 229, 0.1); border-radius: 8px; border: 1px solid rgba(79, 70, 229, 0.2);">
+        <div style="font-size: 0.8rem; color: #a78bfa; margin-bottom: 0.25rem;">Tokens Used</div>
+        <div style="font-size: 1.1rem; font-weight: 600;">${tokenStats.totalTokens}</div>
+      </div>
+      
+      <div style="padding: 0.75rem; background: rgba(79, 70, 229, 0.1); border-radius: 8px; border: 1px solid rgba(79, 70, 229, 0.2);">
+        <div style="font-size: 0.8rem; color: #a78bfa; margin-bottom: 0.25rem;">Efficiency</div>
+        <div style="font-size: 1.1rem; font-weight: 600;">${tokenStats.percentOfLimit}%</div>
+      </div>
+      
+      <div style="padding: 0.75rem; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.2);">
+        <div style="font-size: 0.8rem; color: #34d399; margin-bottom: 0.25rem;">Insights Tagged</div>
+        <div style="font-size: 1.1rem; font-weight: 600; color: #34d399;">${insightStats.total}</div>
+      </div>
+    </div>
+  `;
+  
+  overlay.appendChild(statsCard);
+  document.body.appendChild(overlay);
+  
+  // Close functionality
+  const closeBtn = document.getElementById('close-stats');
+  const closeStats = () => {
+    document.body.removeChild(overlay);
+  };
+  
+  closeBtn.addEventListener('click', closeStats);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeStats();
+    }
+  });
+}
+
 document.getElementById('endSessionButton')
         .addEventListener('click', async () => {
   // Finalize all tracking systems
