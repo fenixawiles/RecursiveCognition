@@ -89,11 +89,16 @@ export async function exportSessionData(sessionId, format = 'all') {
   const dateStamp = new Date().toISOString().split('T')[0];
   const timeStamp = new Date().toLocaleTimeString().replace(/:/g, '-');
 
-// Export HTML Report
-generateAndDownloadFile(generateHTMLReport(exportData), 'text/html', `sonder-report-${dateStamp}.html`, format);
+// Export based on format preference
+if (format === 'html' || format === 'all') {
+  const htmlReport = generateHTMLReport(exportData);
+  downloadFile(htmlReport, 'text/html', `sonder-report-${dateStamp}.html`);
+}
 
-// Export Markdown Report
-generateAndDownloadFile(generateMarkdownReport(exportData), 'text/markdown', `sonder-summary-${dateStamp}.md`, format);
+if (format === 'markdown' || format === 'all') {
+  const markdownReport = generateMarkdownReport(exportData);
+  downloadFile(markdownReport, 'text/markdown', `sonder-summary-${dateStamp}.md`);
+}
 
   console.log(`Session data exported successfully in ${format} format(s)`);
 }
@@ -300,6 +305,237 @@ function generateTextSummary(sessionData, themes, recommendations) {
   }
   
   return summary;
+}
+
+/**
+ * Generate HTML report from export data
+ * @param {Object} exportData - Complete export data
+ * @returns {string} HTML formatted report
+ */
+function generateHTMLReport(exportData) {
+  const { tldrSummary, chatTranscript, sessionSummary } = exportData;
+  
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonder Session Report - ${new Date().toLocaleDateString()}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .conversation {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: white;
+        }
+        .message {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .user-message {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .assistant-message {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+        }
+        .recommendations {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .next-steps {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        h1, h2, h3 { color: #333; }
+        h2 { border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧠 Sonder Session Report</h1>
+        <p>Generated on ${new Date().toLocaleString()}</p>
+    </div>
+
+    <div class="summary-card">
+        <h2>📊 Session Overview</h2>
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-value">${sessionSummary.totalMessages}</div>
+                <div class="metric-label">Messages</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">${sessionSummary.totalInsights}</div>
+                <div class="metric-label">Insights</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">${Math.round(sessionSummary.collaborationRate || 0)}%</div>
+                <div class="metric-label">Collaboration</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">${sessionSummary.sessionDuration || 'N/A'}</div>
+                <div class="metric-label">Duration</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <h2>🎯 Key Insights</h2>
+        <p><strong>Total Insights:</strong> ${tldrSummary.keyInsights.total}</p>
+        <p><strong>Breakthroughs:</strong> ${tldrSummary.keyInsights.breakthroughs}</p>
+        <p><strong>Syntheses:</strong> ${tldrSummary.keyInsights.syntheses}</p>
+        <p><strong>Emotional Trend:</strong> ${tldrSummary.conversationAnalysis.emotionalTrend}</p>
+    </div>
+
+    <div class="summary-card recommendations">
+        <h2>💡 Recommendations</h2>
+        ${tldrSummary.recommendations.map(rec => `
+            <h3>${rec.title}</h3>
+            <p>${rec.description}</p>
+        `).join('')}
+    </div>
+
+    <div class="summary-card next-steps">
+        <h2>📋 Next Steps</h2>
+        ${tldrSummary.nextSteps.map(step => `
+            <h3>${step.action}</h3>
+            <p><strong>Description:</strong> ${step.description}</p>
+            <p><strong>Timeframe:</strong> ${step.timeframe} | <strong>Priority:</strong> ${step.priority}</p>
+        `).join('')}
+    </div>
+
+    <div class="summary-card">
+        <h2>💬 Conversation Transcript</h2>
+        <div class="conversation">
+            ${chatTranscript.filter(msg => msg.role !== 'system').map(msg => `
+                <div class="message ${msg.role}-message">
+                    <strong>${msg.role === 'user' ? 'You' : 'Sonder'}:</strong>
+                    <p>${msg.content}</p>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Generate Markdown report from export data
+ * @param {Object} exportData - Complete export data
+ * @returns {string} Markdown formatted report
+ */
+function generateMarkdownReport(exportData) {
+  const { tldrSummary, chatTranscript, sessionSummary } = exportData;
+  
+  return `# 🧠 Sonder Session Report
+
+*Generated on ${new Date().toLocaleString()}*
+
+## 📊 Session Overview
+
+- **Messages:** ${sessionSummary.totalMessages}
+- **Insights:** ${sessionSummary.totalInsights}
+- **Collaboration Rate:** ${Math.round(sessionSummary.collaborationRate || 0)}%
+- **Session Duration:** ${sessionSummary.sessionDuration || 'N/A'}
+
+## 🎯 Key Insights
+
+- **Total Insights:** ${tldrSummary.keyInsights.total}
+- **Breakthroughs:** ${tldrSummary.keyInsights.breakthroughs}
+- **Syntheses:** ${tldrSummary.keyInsights.syntheses}
+- **Emotional Trend:** ${tldrSummary.conversationAnalysis.emotionalTrend}
+
+## 💡 Recommendations
+
+${tldrSummary.recommendations.map(rec => `### ${rec.title}\n\n${rec.description}\n`).join('\n')}
+
+## 📋 Next Steps
+
+${tldrSummary.nextSteps.map(step => `### ${step.action}\n\n**Description:** ${step.description}\n\n**Timeframe:** ${step.timeframe} | **Priority:** ${step.priority}\n`).join('\n')}
+
+## 💬 Conversation Transcript
+
+${chatTranscript.filter(msg => msg.role !== 'system').map(msg => `### ${msg.role === 'user' ? 'You' : 'Sonder'}\n\n${msg.content}\n`).join('\n---\n\n')}
+
+---
+
+*This report was generated by Sonder AI*
+`;
+}
+
+/**
+ * Download file with given content
+ * @param {string} content - File content
+ * @param {string} mimeType - MIME type
+ * @param {string} filename - Filename
+ */
+function downloadFile(content, mimeType, filename) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /**

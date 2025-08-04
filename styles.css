@@ -268,10 +268,19 @@ body {
     max-height: 120px;
     position: relative;
     z-index: 1;
+    text-align: center;
+    line-height: 1.5;
 }
 
 #userInput::placeholder {
     color: rgba(156, 163, 175, 0.8);
+    text-align: center;
+}
+
+/* When input has content or is focused, align text to left */
+#userInput:not(:placeholder-shown),
+#userInput:focus {
+    text-align: left;
 }
 
 .send-btn {

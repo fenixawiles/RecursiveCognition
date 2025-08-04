@@ -432,6 +432,10 @@ async function sendMessage() {
 
   const chatbox = document.getElementById('chatbox');
   
+  // Clear input and reset height immediately for better UX
+  userInputEl.value = '';
+  resetTextareaHeight();
+  
   // Add user message with insight tagging capability
   const userMessage = addMessage(sessionId, 'user', userInput);
   incrementMessageCount('user');
@@ -505,9 +509,6 @@ async function sendMessage() {
     // Track assistant message in current phase
     const updatedMessages = getSession(sessionId);
     trackMessagePhase(assistantMessage.id, aiResponse, 'assistant', null, updatedMessages.length);
-    
-    userInputEl.value = '';
-    resetTextareaHeight(); // Reset height after sending
     
     // Update token display if it exists
     updateTokenDisplay();
