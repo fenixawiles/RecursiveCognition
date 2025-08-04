@@ -1333,23 +1333,49 @@ body {
     }
     
     .token-float {
-        position: fixed;
-        top: 4rem;
-        right: 0.5rem;
-        left: auto;
-        bottom: auto;
-        margin: 0;
-        font-size: 0.75rem;
+        display: none; /* Hide floating token display on mobile */
+    }
+    
+    /* Add stats button to header on mobile */
+    .stats-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
         padding: 0.25rem 0.5rem;
-        z-index: 999;
-        background: rgba(15, 23, 42, 0.95);
-        backdrop-filter: blur(20px);
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(99, 102, 241, 0.2));
         border: 1px solid rgba(79, 70, 229, 0.4);
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        /* Make it smaller and less intrusive on mobile */
-        max-width: 120px;
-        text-align: center;
+        border-radius: 6px;
+        color: #e5e7eb;
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+        min-height: 32px;
+    }
+    
+    .stats-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s;
+    }
+    
+    .stats-btn:hover::before {
+        left: 100%;
+    }
+    
+    .stats-btn:hover {
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.4), rgba(99, 102, 241, 0.4));
+        border-color: rgba(79, 70, 229, 0.6);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
     }
     
     /* Adjust main content to account for fixed footer */
