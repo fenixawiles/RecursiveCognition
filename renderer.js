@@ -693,9 +693,8 @@ function showMobileStats() {
     }
   });
 }
-
 document.getElementById('endSessionButton')
-        .addEventListener('click', async () => {
+        .addEventListener('click', async () = 3e {
   // Finalize all tracking systems
   finalizeSession();
   finalizePhaseTracking();
@@ -703,10 +702,18 @@ document.getElementById('endSessionButton')
   // Get current stats before clearing
   const insightStats = getInsightStats();
   const currentPhase = getCurrentPhase();
-  
-  // Export complete session data using the updated export function
-  await exportSessionData(sessionId);
-  
+
+  // Ask the user if they want to download a transcript
+  if (confirm('Would you like to download a session transcript?')) {
+    const format = prompt('Choose export format: "html" or "markdown"', 'html');
+    if (format === 'html' || format === 'markdown') {
+      // Export complete session data 
+      await exportSessionData(sessionId, format);
+    } else {
+      alert('Invalid format selected. No file will be downloaded.');
+    }
+  }
+   
   // Clear all session data from all modules
   clearSession(sessionId);
   clearPhaseData();
@@ -723,10 +730,11 @@ document.getElementById('endSessionButton')
   const userInputEl = document.getElementById('userInput');
   userInputEl.value = '';
   
-  alert(`Session ended and data downloaded successfully! ${insightStats.total} insights tagged.`);
+  alert(`Session ended and data processing complete. ${insightStats.total} insights tagged.`);
 
   // Redirect to feedback page
   window.location.href = 'feedback.html';
+});
 });
 
 /**

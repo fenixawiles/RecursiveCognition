@@ -89,11 +89,7 @@ export async function exportSessionData(sessionId, format = 'all') {
   const dateStamp = new Date().toISOString().split('T')[0];
   const timeStamp = new Date().toLocaleTimeString().replace(/:/g, '-');
   
-  // Export based on format preference
-  if (format === 'json' || format === 'all') {
-    exportJSON(exportData, `sonder-session-${dateStamp}.json`);
-  }
-  
+  // Export based on format preference (removed JSON option for security)
   if (format === 'html' || format === 'all') {
     const htmlReport = generateHTMLReport(exportData);
     exportHTML(htmlReport, `sonder-report-${dateStamp}.html`);
