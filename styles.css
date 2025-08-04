@@ -41,9 +41,13 @@ body {
     background-attachment: fixed;
     color: #e5e7eb;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile browsers */
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    /* iOS Safari safe area support */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Header */
