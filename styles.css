@@ -1240,7 +1240,12 @@ body {
     }
     
     .message-container {
-        padding: 1rem;
+        padding: 0.875rem; /* Slightly reduced for tablet */
+        margin-bottom: 1rem;
+    }
+
+    .message-container p, .message-container strong {
+        font-size: 0.95rem; /* Slightly reduced font size for tablet */
     }
     
     .token-float {
@@ -1272,8 +1277,12 @@ body {
     }
     
     .message-container {
-        padding: 0.75rem;
-        margin-bottom: 1rem;
+        padding: 0.5rem; /* Reduced padding */
+        margin-bottom: 0.75rem;
+    }
+
+    .message-container p, .message-container strong {
+        font-size: 0.9rem; /* Reduced font size for better visibility */
     }
     
     .chat-footer {
