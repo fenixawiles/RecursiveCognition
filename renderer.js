@@ -701,8 +701,14 @@ document.getElementById('endSessionButton')
   finalizeSession();
   finalizePhaseTracking();
   
-// Export complete session data using the updated export function
+  // Get current stats before clearing
+  const insightStats = getInsightStats();
+  const currentPhase = getCurrentPhase();
+  
+  // Export complete session data using the updated export function
   await exportSessionData(sessionId);
+  
+  // Clear all session data from all modules
   clearSession(sessionId);
   clearPhaseData();
   clearValenceData();
@@ -718,7 +724,7 @@ document.getElementById('endSessionButton')
   const userInputEl = document.getElementById('userInput');
   userInputEl.value = '';
   
-  alert(`Session ended and data downloaded successfully! ${insightData.insightStats.total} insights tagged across ${phaseData.phaseSummary.totalPhases} phases.`);
+  alert(`Session ended and data downloaded successfully! ${insightStats.total} insights tagged.`);
 
   // Redirect to feedback page
   window.location.href = 'feedback.html';
