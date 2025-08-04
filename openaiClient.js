@@ -1,7 +1,7 @@
 // Note: In a production app, never expose your API key in client-side code!
 // This should be handled by a backend server for security.
 // Replace 'YOUR_OPENAI_API_KEY_HERE' with your actual OpenAI API key
-const API_KEY = "YOUR_API_KEY";
+const API_KEY = "MY_API_KEY";
 
 /**
  * Send a chat completion request to OpenAI
@@ -18,7 +18,10 @@ export async function sendChatCompletion(messages) {
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
-        messages: messages
+        messages: messages,
+        max_tokens: 500, // Limit response length for efficiency
+        temperature: 0.7,
+        presence_penalty: 0.1 // Encourage variety without waste
       })
     });
 
