@@ -694,7 +694,7 @@ function showMobileStats() {
   });
 }
 document.getElementById('endSessionButton')
-        .addEventListener('click', async () = 3e {
+        .addEventListener('click', async () => {
   // Finalize all tracking systems
   finalizeSession();
   finalizePhaseTracking();
@@ -705,7 +705,7 @@ document.getElementById('endSessionButton')
 
   // Ask the user if they want to download a transcript
   if (confirm('Would you like to download a session transcript?')) {
-    const format = prompt('Choose export format: "html" or "markdown"', 'html');
+    const format = prompt('Choose export format:\n\n"html" - Best for viewing in web browsers (recommended for readability)\n"markdown" - Text format compatible with note-taking apps\n\nEnter your choice:', 'html');
     if (format === 'html' || format === 'markdown') {
       // Export complete session data 
       await exportSessionData(sessionId, format);
@@ -734,7 +734,6 @@ document.getElementById('endSessionButton')
 
   // Redirect to feedback page
   window.location.href = 'feedback.html';
-});
 });
 
 /**

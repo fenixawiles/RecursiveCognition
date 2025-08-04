@@ -88,17 +88,12 @@ export async function exportSessionData(sessionId, format = 'all') {
 
   const dateStamp = new Date().toISOString().split('T')[0];
   const timeStamp = new Date().toLocaleTimeString().replace(/:/g, '-');
-  
-  // Export based on format preference (removed JSON option for security)
-  if (format === 'html' || format === 'all') {
-    const htmlReport = generateHTMLReport(exportData);
-    exportHTML(htmlReport, `sonder-report-${dateStamp}.html`);
-  }
-  
-  if (format === 'markdown' || format === 'all') {
-    const markdownReport = generateMarkdownReport(exportData);
-    exportMarkdown(markdownReport, `sonder-summary-${dateStamp}.md`);
-  }
+
+// Export HTML Report
+generateAndDownloadFile(generateHTMLReport(exportData), 'text/html', `sonder-report-${dateStamp}.html`, format);
+
+// Export Markdown Report
+generateAndDownloadFile(generateMarkdownReport(exportData), 'text/markdown', `sonder-summary-${dateStamp}.md`, format);
 
   console.log(`Session data exported successfully in ${format} format(s)`);
 }
