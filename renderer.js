@@ -920,50 +920,61 @@ function resetTextareaHeight() {
   }
 }
 
-// Add mobile stats button functionality with Safari compatibility
+// Enhance mobile stats button functionality for Safari
 const mobileStatsButtonEl = document.getElementById('mobileStatsButton');
 if (mobileStatsButtonEl) {
-  // Primary event listener
-  mobileStatsButtonEl.addEventListener('click', (e) => {
+  console.log('Adding event listeners to mobile stats button');
+
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+  const handleClick = (e) => {
+    console.log('Stats button clicked');
     e.preventDefault();
-    e.stopPropagation();
     showMobileStats();
-  });
-  
-  // Safari fallback - add touch events
-  mobileStatsButtonEl.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Add visual feedback
-    mobileStatsButtonEl.style.transform = 'scale(0.95)';
-  });
-  
-  mobileStatsButtonEl.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Reset visual feedback
-    mobileStatsButtonEl.style.transform = 'scale(1)';
-    // Trigger action
-    setTimeout(() => showMobileStats(), 50);
-  });
-  
-  // Ensure button is focusable and accessible
-  mobileStatsButtonEl.setAttribute('tabindex', '0');
-  mobileStatsButtonEl.setAttribute('role', 'button');
-  
-  // Keyboard accessibility
+  };
+
+  mobileStatsButtonEl.addEventListener('click', handleClick);
+
+  if (isSafari) {
+    mobileStatsButtonEl.addEventListener('touchstart', (e) => {
+      console.log('Stats button touchstart');
+      e.preventDefault();
+    }, { passive: false });
+
+    mobileStatsButtonEl.addEventListener('touchend', (e) => {
+      console.log('Stats button touchend');
+      e.preventDefault();
+      showMobileStats();
+    }, { passive: false });
+  }
+
   mobileStatsButtonEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
+      console.log('Stats button keydown');
       e.preventDefault();
       showMobileStats();
     }
   });
+
+  // Direct onclick attribute as a last resort
+  mobileStatsButtonEl.onclick = (e) => {
+    console.log('Stats button onclick event');
+    e.preventDefault();
+    showMobileStats();
+  };
+  
+  console.log('Mobile stats button setup complete');
 }
+
+// Make showMobileStats globally accessible for HTML onclick
+window.showMobileStats = showMobileStats;
 
 /**
  * Show mobile stats modal/popup
  */
 function showMobileStats() {
+  console.log('showMobileStats function called');
+  
   const messages = getSession(sessionId);
   const tokenStats = getTokenStats(messages);
   const insightStats = getInsightStats();

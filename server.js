@@ -43,15 +43,21 @@ if (process.env.NODE_ENV === 'production') {
     // No helmet at all in development to avoid any CSP issues
 }
 
-// Implement Rate Limiting
+// Implement Rate Limiting with development-friendly settings
 const limiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    max: 60, // Limit each IP to 60 requests per minute
+    max: process.env.NODE_ENV === 'production' ? 60 : 200, // Higher limit for development
     message: { error: 'Too many requests from this IP, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false
 });
 app.use(limiter);
+
+if (process.env.NODE_ENV === 'production') {
+    console.log('🔒 Production mode: Rate limiting enabled (60 requests/minute)');
+} else {
+    console.log('🛠️  Development mode: Rate limiting relaxed (200 requests/minute)');
+}
 
 // CORS Configuration
 const corsOptions = {
