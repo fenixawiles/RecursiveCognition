@@ -23,7 +23,7 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY 
 });
 
-// Security Headers - disable CSP in development, enable in production
+// Security Headers - only enable in production
 if (process.env.NODE_ENV === 'production') {
     app.use(helmet({
         contentSecurityPolicy: {
@@ -37,11 +37,10 @@ if (process.env.NODE_ENV === 'production') {
             }
         }
     }));
+    console.log('🔒 Production mode: Security headers enabled');
 } else {
-    // Development mode - use helmet without CSP to avoid inline handler issues
-    app.use(helmet({
-        contentSecurityPolicy: false
-    }));
+    console.log('🛠️  Development mode: Security headers disabled for easier development');
+    // No helmet at all in development to avoid any CSP issues
 }
 
 // Implement Rate Limiting
