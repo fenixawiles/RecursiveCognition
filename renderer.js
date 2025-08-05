@@ -148,28 +148,53 @@ async function showExportModal(sessionId, insightStats) {
 
   document.getElementById('export-html').addEventListener('click', async () => {
     await exportSessionData(sessionId, 'html');
-    document.body.removeChild(overlay);
-    document.head.removeChild(style);
+    closeModalAndCleanup();
   });
 
   document.getElementById('export-markdown').addEventListener('click', async () => {
     await exportSessionData(sessionId, 'markdown');
-    document.body.removeChild(overlay);
-    document.head.removeChild(style);
+    closeModalAndCleanup();
   });
 
   document.getElementById('skip-export').addEventListener('click', () => {
-    document.body.removeChild(overlay);
-    document.head.removeChild(style);
+    closeModalAndCleanup();
   });
   
   // Close on overlay click
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) {
-      document.body.removeChild(overlay);
-      document.head.removeChild(style);
+      closeModalAndCleanup();
     }
   });
+  
+  // Function to clean up modal and clear session data
+  function closeModalAndCleanup() {
+    document.body.removeChild(overlay);
+    document.head.removeChild(style);
+    
+    // Clear all session data from all modules after export
+    clearSession(sessionId);
+    clearPhaseData();
+    clearValenceData();
+    clearOriginData();
+    clearLoopLog();
+    clearCompressionLog();
+    
+    // Clear the chat UI
+    const chatbox = document.getElementById('chatbox');
+    if (chatbox) {
+      chatbox.innerHTML = '';
+    }
+    
+    // Clear the input field
+    const userInputEl = document.getElementById('userInput');
+    if (userInputEl) {
+      userInputEl.value = '';
+    }
+    
+    // Show completion message with custom modal
+    showCompletionModal(insightStats.total);
+  }
 }
 
 async function showCompletionModal(totalInsights) {
@@ -1000,31 +1025,8 @@ if (endSessionButtonEl) {
     const insightStats = getInsightStats();
     const currentPhase = getCurrentPhase();
 
-    // Show custom export modal
+    // Show custom export modal - this will handle clearing data after export
     await showExportModal(sessionId, insightStats);
-     
-    // Clear all session data from all modules
-    clearSession(sessionId);
-    clearPhaseData();
-    clearValenceData();
-    clearOriginData();
-    clearLoopLog();
-    clearCompressionLog();
-    
-    // Clear the chat UI
-    const chatbox = document.getElementById('chatbox');
-    if (chatbox) {
-      chatbox.innerHTML = '';
-    }
-    
-    // Clear the input field
-    const userInputEl = document.getElementById('userInput');
-    if (userInputEl) {
-      userInputEl.value = '';
-    }
-    
-    // Show completion message with custom modal
-    showCompletionModal(insightStats.total);
   });
 }
 
