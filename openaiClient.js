@@ -8,7 +8,7 @@
  */
 export async function sendChatCompletion(messages) {
   try {
-    const response = await fetch('/api/chat', {
+    const response = await fetch('/api/converse', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

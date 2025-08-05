@@ -22,8 +22,8 @@ A reflective AI chat application powered by OpenAI's GPT-3.5 Turbo API. Sonder i
 ## Setup
 
 1. Clone this repository
-2. Replace `YOUR_OPENAI_API_KEY_HERE` in `openaiClient.js` with your actual OpenAI API key
-3. Serve the files using a local web server (due to CORS restrictions)
+2. Set your OpenAI API key in the Render environment settings, not in the code.
+3. Deploy the application on Render, which will handle CORS restrictions automatically.
 4. Open `chat.html` in your browser
 
 ### Getting an OpenAI API Key
@@ -32,11 +32,11 @@ A reflective AI chat application powered by OpenAI's GPT-3.5 Turbo API. Sonder i
 2. Sign up or log in to your account
 3. Navigate to the API keys section
 4. Create a new API key
-5. Copy the key and replace `YOUR_OPENAI_API_KEY_HERE` in `openaiClient.js`
+5. Copy the key and set it in the Render environment settings.
 
 ## Security Note
 
-⚠️ **Important**: The current implementation exposes the OpenAI API key in client-side code. For production use, implement a backend server to handle API calls securely.
+⚠️ **Important**: The implementation uses a secure server-side API call to protect the OpenAI key. Ensure all sensitive data is kept server-side.
 
 ## Usage
 
