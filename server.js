@@ -23,17 +23,19 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY 
 });
 
-// Security Headers
+// Security Headers with CSP configured for inline handlers
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
-            defaultSrc: ["'self'", "https://recursivecognition.org"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'", "https://cdn.jsdelivr.net"],
-            scriptSrcAttr: ["'unsafe-inline'"],
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:"],
-            connectSrc: ["'self'", "https://recursivecognition.org"]
-        }
+            connectSrc: ["'self'"],
+            // Don't set script-src-attr to allow inline event handlers
+        },
+        // Use CSP report-only mode for development
+        reportOnly: process.env.NODE_ENV !== 'production'
     }
 }));
 
