@@ -98,6 +98,10 @@ body {
 
 /* Header */
 .chat-header {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 100;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -169,6 +173,7 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
+    padding-top: 80px; /* Account for fixed header height */
 }
 
 .chat-messages {
@@ -1447,7 +1452,7 @@ body {
 /* Notification System Styles */
 .notification-container {
     position: fixed;
-    top: 20px;
+    top: 100px; /* Below fixed header */
     right: 20px;
     z-index: 1000;
     pointer-events: none;
@@ -1585,7 +1590,7 @@ body {
 /* Responsive design for notifications */
 @media (max-width: 480px) {
     .notification-container {
-        top: 10px;
+        top: 70px; /* Below mobile fixed header */
         right: 10px;
         left: 10px;
     }
