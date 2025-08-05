@@ -43,20 +43,19 @@ if (process.env.NODE_ENV === 'production') {
     // No helmet at all in development to avoid any CSP issues
 }
 
-// Implement Rate Limiting with development-friendly settings
-const limiter = rateLimit({
+// Implement Rate Limiting - only for API endpoints, not page refreshes
+const apiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
     max: process.env.NODE_ENV === 'production' ? 60 : 200, // Higher limit for development
     message: { error: 'Too many requests from this IP, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false
 });
-app.use(limiter);
 
 if (process.env.NODE_ENV === 'production') {
-    console.log('🔒 Production mode: Rate limiting enabled (60 requests/minute)');
+    console.log('🔒 Production mode: Rate limiting enabled for API endpoints (60 requests/minute)');
 } else {
-    console.log('🛠️  Development mode: Rate limiting relaxed (200 requests/minute)');
+    console.log('🛠️  Development mode: Rate limiting relaxed for API endpoints (200 requests/minute)');
 }
 
 // CORS Configuration
@@ -111,8 +110,9 @@ const validateChatRequest = [
         .withMessage('Temperature must be between 0 and 2')
 ];
 
-// Secured API endpoint for chat completions
-app.post('/api/converse', validateChatRequest, async (req, res) => {
+// Apply rate limiter ONLY to the chat API endpoint
+// Don't apply to static files, HTML pages, or other routes
+app.post('/api/converse', apiLimiter, validateChatRequest, async (req, res) => {
     try {
         // Check validation results
         const errors = validationResult(req);
@@ -177,6 +177,12 @@ app.post('/api/converse', validateChatRequest, async (req, res) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Serve HTML files directly without rate limiting
+app.get('*.html', (req, res) => {
+    const fileName = path.basename(req.path);
+    res.sendFile(path.join(__dirname, fileName));
 });
 
 // Catch-all handler: send back index.html for client-side routing
