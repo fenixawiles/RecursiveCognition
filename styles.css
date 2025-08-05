@@ -1278,7 +1278,7 @@ body {
 
 /* Hide stats button on desktop, show on mobile */
 .stats-btn {
-    display: none;
+    display: none !important;
 }
 
 /* Responsive Design */
@@ -1403,8 +1403,8 @@ body {
     
     /* Add stats button to header on mobile - Safari compatible */
     .stats-btn {
-        display: -webkit-inline-flex;
-        display: inline-flex;
+        display: -webkit-inline-flex !important;
+        display: inline-flex !important;
         -webkit-align-items: center;
         align-items: center;
         gap: 0.25rem;
