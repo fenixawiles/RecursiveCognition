@@ -920,11 +920,43 @@ function resetTextareaHeight() {
   }
 }
 
-// Add mobile stats button functionality
+// Add mobile stats button functionality with Safari compatibility
 const mobileStatsButtonEl = document.getElementById('mobileStatsButton');
 if (mobileStatsButtonEl) {
-  mobileStatsButtonEl.addEventListener('click', () => {
+  // Primary event listener
+  mobileStatsButtonEl.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     showMobileStats();
+  });
+  
+  // Safari fallback - add touch events
+  mobileStatsButtonEl.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Add visual feedback
+    mobileStatsButtonEl.style.transform = 'scale(0.95)';
+  });
+  
+  mobileStatsButtonEl.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Reset visual feedback
+    mobileStatsButtonEl.style.transform = 'scale(1)';
+    // Trigger action
+    setTimeout(() => showMobileStats(), 50);
+  });
+  
+  // Ensure button is focusable and accessible
+  mobileStatsButtonEl.setAttribute('tabindex', '0');
+  mobileStatsButtonEl.setAttribute('role', 'button');
+  
+  // Keyboard accessibility
+  mobileStatsButtonEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      showMobileStats();
+    }
   });
 }
 
