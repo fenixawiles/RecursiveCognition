@@ -384,6 +384,82 @@ function initializeMobileEnhancements() {
             chatMain.style.transform = 'translateY(0)';
         });
     }
+    
+    // Chrome mobile specific placeholder fix
+    if (isChromeOnMobile()) {
+        initializeChromeMobilePlaceholderFix();
+    }
+}
+
+/**
+ * Detect if running on Chrome mobile
+ */
+function isChromeOnMobile() {
+    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+    const isMobile = window.innerWidth <= 768;
+    return isChrome && isMobile;
+}
+
+/**
+ * Initialize Chrome mobile specific placeholder fix
+ */
+function initializeChromeMobilePlaceholderFix() {
+    const userInput = document.getElementById('userInput');
+    const inputWrapper = userInput?.closest('.input-wrapper');
+    
+    if (!userInput || !inputWrapper) return;
+    
+    // Create custom placeholder element
+    const customPlaceholder = document.createElement('div');
+    customPlaceholder.id = 'custom-placeholder';
+    customPlaceholder.textContent = userInput.placeholder || 'Message Sonder...';
+    customPlaceholder.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: rgba(156, 163, 175, 0.8);
+        font-size: 16px;
+        pointer-events: none;
+        z-index: 2;
+        transition: opacity 0.3s ease;
+        text-align: center;
+        white-space: nowrap;
+        user-select: none;
+    `;
+    
+    // Position the input wrapper relatively
+    inputWrapper.style.position = 'relative';
+    
+    // Insert custom placeholder
+    inputWrapper.appendChild(customPlaceholder);
+    
+    // Hide native placeholder
+    userInput.placeholder = '';
+    
+    // Handle placeholder visibility
+    function updatePlaceholderVisibility() {
+        const hasValue = userInput.value.trim().length > 0;
+        const isFocused = document.activeElement === userInput;
+        
+        if (hasValue || isFocused) {
+            customPlaceholder.style.opacity = '0';
+            customPlaceholder.style.visibility = 'hidden';
+        } else {
+            customPlaceholder.style.opacity = '1';
+            customPlaceholder.style.visibility = 'visible';
+        }
+    }
+    
+    // Event listeners
+    userInput.addEventListener('input', updatePlaceholderVisibility);
+    userInput.addEventListener('focus', updatePlaceholderVisibility);
+    userInput.addEventListener('blur', updatePlaceholderVisibility);
+    
+    // Initial state
+    updatePlaceholderVisibility();
+    
+    console.log('Chrome mobile placeholder fix initialized');
 }
 
 // Initialize the app with a focus on simplicity and ease of use
@@ -567,9 +643,13 @@ function renderMessage(chatbox, sender, content, messageId, isFormatted = false)
   // Add to chatbox
   chatbox.appendChild(messageDiv);
   
-  // Auto-scroll to show the latest message
+  // Auto-scroll to show the latest message with smooth scrolling
   requestAnimationFrame(() => {
-    chatbox.scrollTop = chatbox.scrollHeight;
+    // Use smooth scrolling for both mobile and desktop for better UX
+    chatbox.scrollTo({
+      top: chatbox.scrollHeight,
+      behavior: 'smooth'
+    });
   });
 }
 
@@ -887,14 +967,18 @@ if (clearChatButtonEl) {
 const userInputForKeyboard = document.getElementById('userInput');
 
 if (userInputForKeyboard) {
-  // Auto-expand textarea as user types
+  // Auto-expand textarea as user types (disabled on mobile to prevent layout shifts)
   function autoExpandTextarea() {
-    userInputForKeyboard.style.height = 'auto';
-    userInputForKeyboard.style.height = Math.min(userInputForKeyboard.scrollHeight, 120) + 'px';
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) {
+      userInputForKeyboard.style.height = 'auto';
+      userInputForKeyboard.style.height = Math.min(userInputForKeyboard.scrollHeight, 120) + 'px';
+    }
   }
 
-  // Add input event listener for auto-expansion
-  userInputForKeyboard.addEventListener('input', autoExpandTextarea);
+  // Auto-expansion disabled on both mobile and desktop for consistent placeholder behavior
+  // This prevents layout shifts and placeholder positioning issues
+  // userInputForKeyboard.addEventListener('input', autoExpandTextarea);
 
   // Handle Enter key (send on Enter, new line on Shift+Enter)
   userInputForKeyboard.addEventListener('keydown', function(event) {
@@ -911,13 +995,11 @@ if (userInputForKeyboard) {
   });
 }
 
-// Reset textarea height after sending
+// Reset textarea height after sending (disabled on all devices for consistent placeholder behavior)
 function resetTextareaHeight() {
-  const userInputForReset = document.getElementById('userInput');
-  if (userInputForReset) {
-    userInputForReset.style.height = 'auto';
-    userInputForReset.style.height = '24px';
-  }
+  // Height reset is now disabled on both mobile and desktop to prevent placeholder shifts
+  // The textarea maintains a fixed 44px height as defined in CSS
+  // This ensures consistent placeholder positioning across all devices
 }
 
 // Enhance mobile stats button functionality for Safari

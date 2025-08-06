@@ -269,23 +269,38 @@ body {
     font-size: 1rem;
     background: transparent;
     color: #e5e7eb;
-    overflow-y: auto;
-    max-height: 120px;
+    /* Fixed height for consistent placeholder positioning */
+    height: 44px !important;
+    max-height: 44px !important;
+    min-height: 44px;
+    overflow-y: hidden !important;
     position: relative;
     z-index: 1;
     text-align: center;
-    line-height: 1.5;
+    line-height: 44px; /* Match height for perfect vertical centering */
+    box-sizing: border-box;
 }
 
 #userInput::placeholder {
     color: rgba(156, 163, 175, 0.8);
     text-align: center;
+    line-height: 44px; /* Match input height for perfect vertical centering */
+    position: static;
+    vertical-align: middle;
+    width: 100%;
+    display: inline-block;
+    height: 100%;
+    pointer-events: none;
 }
 
 /* When input has content or is focused, align text to left */
 #userInput:not(:placeholder-shown),
 #userInput:focus {
     text-align: left;
+    line-height: 1.5; /* Normal line height for content */
+    overflow-y: hidden !important;
+    height: 44px !important;
+    max-height: 44px !important;
 }
 
 .send-btn {
@@ -379,11 +394,6 @@ body {
     background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.5), transparent);
 }
 
-.message-container:hover {
-    border-color: rgba(79, 70, 229, 0.5);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-    transform: translateY(-2px);
-}
 
 .message-container p {
     margin: 0;
@@ -561,40 +571,32 @@ body {
 }
 
 .insight-btn {
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.6), rgba(99, 102, 241, 0.6));
-    color: white;
-    border: 1px solid rgba(79, 70, 229, 0.4);
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    border: 1px solid rgba(79, 70, 229, 0.6);
     padding: 0.25rem 0.5rem;
     font-size: 0.8rem;
     border-radius: 6px;
     cursor: pointer;
     margin: 0;
-    transition: all 0.3s ease;
     backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
-}
-
-.insight-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-}
-
-.insight-btn:hover::before {
-    left: 100%;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+    transition: all 0.3s ease;
+    font-weight: 500;
 }
 
 .insight-btn:hover {
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.8), rgba(99, 102, 241, 0.8));
-    border-color: rgba(79, 70, 229, 0.6);
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+.insight-btn.clicked {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #ffffff;
+    border: 1px solid rgba(79, 70, 229, 0.6);
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
 }
 
 .insight-dropdown {
@@ -1414,21 +1416,66 @@ body {
     .input-wrapper {
         padding: 0.5rem;
         border-radius: 8px;
-        align-items: flex-end;
+        align-items: center;
+        position: relative;
+        min-height: 60px; /* Ensure consistent height */
     }
     
     #userInput {
         padding: 0.75rem;
         font-size: 16px; /* Prevents zoom on iOS */
         line-height: 1.4;
-        min-height: 20px;
-        max-height: 100px;
+        min-height: 44px; /* Fixed minimum height */
+        height: 44px !important; /* Force fixed height */
+        max-height: 44px !important; /* Prevent expansion */
         border-radius: 6px;
         resize: none;
         /* Better mobile text input */
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
+        /* Fix placeholder positioning on mobile */
+        text-align: center;
+        vertical-align: middle;
+        box-sizing: border-box;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        /* Ensure consistent positioning */
+        display: block;
+        width: 100%;
+        /* Prevent auto-resize */
+        overflow-y: hidden !important;
+    }
+    
+    #userInput::placeholder {
+        color: rgba(156, 163, 175, 0.8);
+        text-align: center;
+        vertical-align: middle;
+        line-height: 44px; /* Match input height for perfect vertical centering */
+        position: static;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        display: inline-block;
+        height: 100%;
+        pointer-events: none;
+        /* Chrome mobile specific fixes */
+        transform: translateY(0);
+        -webkit-transform: translateY(0);
+    }
+    
+    /* When input has content or is focused on mobile, align text to left */
+    #userInput:not(:placeholder-shown),
+    #userInput:focus {
+        text-align: left;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow-x: auto;
+        overflow-y: hidden !important;
+        height: 44px !important;
+        max-height: 44px !important;
     }
     
     .send-btn {
@@ -1444,17 +1491,17 @@ body {
         display: none !important;
     }
     
-    /* Show stats button on mobile - Styling enforcement to match Chrome */
+    /* Show stats button on mobile - Original Chrome styling */
     .stats-btn {
         display: inline-flex !important;
         align-items: center;
         justify-content: center;
-        padding: 0.5rem 1rem;
+        padding: 0.25rem 0.5rem;
         border: 1px solid rgba(79, 70, 229, 0.4);
         border-radius: 8px;
         background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(99, 102, 241, 0.2));
         color: #e5e7eb;
-        font-size: 0.875rem;
+        font-size: 0.75rem;
         font-weight: 500;
         text-decoration: none;
         cursor: pointer;
@@ -1623,11 +1670,6 @@ body {
 
 /* Enhanced insight controls for simplified UX */
 .insight-controls {
-    opacity: 0.7;
-    transition: opacity 0.3s;
-}
-
-.message-container:hover .insight-controls {
     opacity: 1;
 }
 
@@ -1701,6 +1743,24 @@ body {
         clip-path: none !important;
     }
     
+    /* Ensure insight button styling works on touch devices */
+    .insight-btn {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(79, 70, 229, 0.6) !important;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3) !important;
+        font-weight: 500 !important;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .insight-btn.clicked {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(79, 70, 229, 0.6) !important;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3) !important;
+    }
+    
     /* Aggressively hide token display on touch devices */
     .token-float, 
     #token-display,
@@ -1736,5 +1796,63 @@ body {
             height: 0 !important;
             z-index: -9999 !important;
         }
+    }
+}
+
+/* Chrome mobile specific placeholder fixes */
+@media screen and (max-width: 480px) and (-webkit-min-device-pixel-ratio: 0) {
+    /* Target Chrome mobile specifically */
+    #userInput {
+        font-size: 16px !important; /* Prevents zoom on Chrome mobile */
+        line-height: 44px !important; /* Force line height */
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        /* Force consistent height and prevent any layout shifts */
+        min-height: 44px !important;
+        height: 44px !important;
+        max-height: 44px !important;
+        /* Prevent Chrome's auto-sizing behaviors */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        /* Additional Chrome rendering fixes */
+        will-change: auto;
+        contain: layout style;
+    }
+    
+    #userInput::placeholder {
+        /* Chrome mobile placeholder specific fixes */
+        line-height: 44px !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        margin: 0 !important;
+        padding: 0 0.5rem !important;
+        /* Prevent any transforms or movements */
+        transform: none !important;
+        -webkit-transform: none !important;
+        /* Force rendering as block */
+        box-sizing: border-box !important;
+        width: 100% !important;
+    }
+    
+    /* Force the input wrapper to maintain stable size */
+    .input-wrapper {
+        min-height: 60px !important;
+        height: 60px !important;
+        align-items: center !important;
+        display: flex !important;
+    }
+    
+    /* When input has content, hide the custom placeholder positioning */
+    #userInput:not(:placeholder-shown)::placeholder {
+        display: none !important;
+        visibility: hidden !important;
     }
 }
