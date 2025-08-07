@@ -377,6 +377,114 @@ body {
 
 /* Message container styles */
 
+/* Typing Animation Styles */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    margin-bottom: 1.75rem;
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(79, 70, 229, 0.35);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.typing-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.5), transparent);
+}
+
+.typing-indicator .typing-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.typing-indicator .typing-avatar {
+    font-size: 1.2rem;
+    opacity: 0.8;
+}
+
+.typing-indicator .typing-text {
+    color: #a78bfa;
+    font-size: 0.95rem;
+    opacity: 0.9;
+}
+
+.typing-dots {
+    display: inline-flex;
+    gap: 0.25rem;
+    margin-left: 0.5rem;
+}
+
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #a78bfa;
+    animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0;
+}
+
+@keyframes typingBounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.3;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Typing text animation for character-by-character reveal */
+.typing-text-animation {
+    overflow: hidden;
+    border-right: 2px solid #a78bfa;
+    animation: blinkCursor 1s infinite;
+}
+
+@keyframes blinkCursor {
+    0%, 50% {
+        border-color: #a78bfa;
+    }
+    51%, 100% {
+        border-color: transparent;
+    }
+}
+
 .message-container {
     margin-bottom: 1.75rem;
     padding: 1.5rem;

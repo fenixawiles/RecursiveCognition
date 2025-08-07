@@ -828,6 +828,9 @@ async function sendMessage() {
   incrementMessageCount('user');
   renderMessage(chatbox, 'You', userInput, userMessage.id);
   
+  // Show typing indicator immediately after user message
+  const typingIndicator = showTypingIndicator(chatbox);
+  
   // Auto-detect insights in user message (only when actually sent)
   try {
     const insights = autoDetectInsights(userMessage.id, userInput);
@@ -879,6 +882,9 @@ async function sendMessage() {
     // Call OpenAI API directly
     const { content: aiResponse } = await sendChatCompletion(getSession(sessionId));
     
+    // Remove typing indicator
+    hideTypingIndicator(typingIndicator);
+    
     // Format the response based on detected structure
     const formattedResponse = formatResponse(aiResponse);
     
@@ -890,8 +896,8 @@ async function sendMessage() {
     const responseTokens = countTokens([assistantMessage]);
     addTokens(responseTokens);
 
-    // Render the formatted version
-    renderMessage(chatbox, 'Sonder', formattedResponse, assistantMessage.id, true);
+    // Render the formatted version with typing animation
+    renderMessageWithTypingAnimation(chatbox, 'Sonder', formattedResponse, assistantMessage.id, true);
     
     // Track assistant message in current phase
     const updatedMessages = getSession(sessionId);
@@ -901,6 +907,8 @@ async function sendMessage() {
     updateTokenDisplay();
   } catch (err) {
     console.error(err);
+    // Remove typing indicator on error
+    hideTypingIndicator(typingIndicator);
     chatbox.innerHTML += `<p>Sonder: Something went wrong on our end.</p>`;
   }
 }
@@ -1460,4 +1468,270 @@ function formatParagraphs(text) {
     const trimmed = paragraph.trim().replace(/\n/g, ' ');
     return `<p>${trimmed}</p>`;
   }).join('');
+}
+
+/**
+ * Show typing indicator while AI is "thinking"
+ * @param {HTMLElement} chatbox - The chat container
+ * @returns {HTMLElement} The typing indicator element
+ */
+function showTypingIndicator(chatbox) {
+  const typingIndicator = document.createElement('div');
+  typingIndicator.className = 'typing-indicator';
+  typingIndicator.innerHTML = `
+    <div class="typing-dots">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <span class="typing-label">Sonder is thinking...</span>
+  `;
+  
+  chatbox.appendChild(typingIndicator);
+  
+  // Auto-scroll to show typing indicator
+  requestAnimationFrame(() => {
+    chatbox.scrollTo({
+      top: chatbox.scrollHeight,
+      behavior: 'smooth'
+    });
+  });
+  
+  return typingIndicator;
+}
+
+/**
+ * Hide and remove typing indicator
+ * @param {HTMLElement} typingIndicator - The typing indicator element to remove
+ */
+function hideTypingIndicator(typingIndicator) {
+  if (typingIndicator && typingIndicator.parentNode) {
+    typingIndicator.parentNode.removeChild(typingIndicator);
+  }
+}
+
+/**
+ * Render message with typing animation (character-by-character)
+ * @param {HTMLElement} chatbox - The chat container
+ * @param {string} sender - The sender name
+ * @param {string} content - The formatted message content
+ * @param {string} messageId - The message ID
+ * @param {boolean} isFormatted - Whether content is already HTML formatted
+ */
+function renderMessageWithTypingAnimation(chatbox, sender, content, messageId, isFormatted = false) {
+  // Create message container immediately
+  const messageDiv = document.createElement('div');
+  messageDiv.className = 'message-container';
+  
+  // Create message content container
+  const messageContent = document.createElement('div');
+  messageContent.className = 'message-content';
+  
+  // Create the typing container for the animated text
+  const typingContainer = document.createElement('div');
+  typingContainer.className = 'typing-text-container';
+  
+  // Start with sender name and cursor
+  const senderSpan = document.createElement('strong');
+  senderSpan.textContent = `${sender}: `;
+  typingContainer.appendChild(senderSpan);
+  
+  // Create content span for the animated text
+  const contentSpan = document.createElement('span');
+  contentSpan.className = 'typing-content';
+  typingContainer.appendChild(contentSpan);
+  
+  // Add blinking cursor
+  const cursor = document.createElement('span');
+  cursor.className = 'typing-cursor';
+  cursor.textContent = '|';
+  typingContainer.appendChild(cursor);
+  
+  // Assemble the message
+  messageContent.appendChild(typingContainer);
+  messageDiv.appendChild(messageContent);
+  chatbox.appendChild(messageDiv);
+  
+  // Auto-scroll to show new message
+  requestAnimationFrame(() => {
+    chatbox.scrollTo({
+      top: chatbox.scrollHeight,
+      behavior: 'smooth'
+    });
+  });
+  
+  // Start typing animation
+  animateTyping(contentSpan, content, isFormatted, messageId, messageDiv, chatbox);
+}
+
+/**
+ * Animate typing effect character by character
+ * @param {HTMLElement} contentSpan - The span to animate text into
+ * @param {string} content - The content to type out
+ * @param {boolean} isFormatted - Whether content contains HTML
+ * @param {string} messageId - The message ID for insight controls
+ * @param {HTMLElement} messageDiv - The message container
+ * @param {HTMLElement} chatbox - The chat container
+ */
+function animateTyping(contentSpan, content, isFormatted, messageId, messageDiv, chatbox) {
+  // If content is HTML formatted, we need to extract just the text for typing
+  // and then apply formatting after typing is complete
+  let textToType;
+  
+  if (isFormatted) {
+    // Create a temporary element to extract text content from HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    textToType = tempDiv.textContent || tempDiv.innerText || '';
+  } else {
+    textToType = content;
+  }
+  
+  let currentIndex = 0;
+  const typingSpeed = 25; // milliseconds per character (adjustable)
+  
+  function typeNextCharacter() {
+    if (currentIndex < textToType.length) {
+      contentSpan.textContent = textToType.substring(0, currentIndex + 1);
+      currentIndex++;
+      
+      // Auto-scroll during typing to keep text visible
+      requestAnimationFrame(() => {
+        chatbox.scrollTo({
+          top: chatbox.scrollHeight,
+          behavior: 'smooth'
+        });
+      });
+      
+      setTimeout(typeNextCharacter, typingSpeed);
+    } else {
+      // Typing complete - replace with fully formatted content and add controls
+      finishTypingAnimation(contentSpan, content, isFormatted, messageId, messageDiv);
+    }
+  }
+  
+  // Start typing after a brief delay
+  setTimeout(typeNextCharacter, 300);
+}
+
+/**
+ * Complete typing animation and replace with formatted content
+ * @param {HTMLElement} contentSpan - The typing content span
+ * @param {string} content - The full formatted content
+ * @param {boolean} isFormatted - Whether content is HTML formatted
+ * @param {string} messageId - The message ID for insight controls
+ * @param {HTMLElement} messageDiv - The message container
+ */
+function finishTypingAnimation(contentSpan, content, isFormatted, messageId, messageDiv) {
+  // Remove typing cursor
+  const cursor = messageDiv.querySelector('.typing-cursor');
+  if (cursor) {
+    cursor.remove();
+  }
+  
+  // Replace typing container with fully formatted content
+  const messageContent = messageDiv.querySelector('.message-content');
+  messageContent.innerHTML = '';
+  
+  // Create final formatted message
+  if (isFormatted) {
+    const messageWrapper = document.createElement('div');
+    messageWrapper.className = 'formatted-message';
+    messageWrapper.innerHTML = `<strong>Sonder:</strong> ${content}`;
+    messageContent.appendChild(messageWrapper);
+  } else {
+    const messageParagraph = document.createElement('p');
+    messageParagraph.innerHTML = `<strong>Sonder:</strong> ${content}`;
+    messageContent.appendChild(messageParagraph);
+  }
+  
+  // Add insight controls after typing is complete
+  addInsightControls(messageContent, messageId, content);
+}
+
+/**
+ * Add insight controls to a message
+ * @param {HTMLElement} messageContent - The message content container
+ * @param {string} messageId - The message ID
+ * @param {string} content - The message content
+ */
+function addInsightControls(messageContent, messageId, content) {
+  // Create insight controls
+  const insightControls = document.createElement('div');
+  insightControls.className = 'insight-controls';
+  
+  // Create insight button
+  const insightButton = document.createElement('button');
+  insightButton.className = 'insight-btn';
+  insightButton.textContent = '🔍 Tag Insight';
+  insightButton.onclick = () => showInsightDropdown(messageId);
+  
+  // Create dropdown
+  const dropdown = document.createElement('div');
+  dropdown.id = `insight-dropdown-${messageId}`;
+  dropdown.className = 'insight-dropdown';
+  dropdown.style.display = 'none';
+  
+  // Create select for insight types
+  const typeSelect = document.createElement('select');
+  typeSelect.id = `insight-type-${messageId}`;
+  
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Select insight type...';
+  typeSelect.appendChild(defaultOption);
+  
+  Object.entries(INSIGHT_TYPES).forEach(([key, value]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = key.replace('_', ' ');
+    typeSelect.appendChild(option);
+  });
+  
+  // Create impact rating select
+  const impactSelect = document.createElement('select');
+  impactSelect.id = `impact-rating-${messageId}`;
+  
+  const defaultImpactOption = document.createElement('option');
+  defaultImpactOption.value = '';
+  defaultImpactOption.textContent = 'Select impact level...';
+  impactSelect.appendChild(defaultImpactOption);
+  
+  Object.entries(IMPACT_RATINGS).forEach(([key, value]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    impactSelect.appendChild(option);
+  });
+  
+  // Create note input
+  const noteInput = document.createElement('input');
+  noteInput.type = 'text';
+  noteInput.id = `insight-note-${messageId}`;
+  noteInput.placeholder = 'Optional note...';
+  noteInput.maxLength = 500;
+  
+  // Create tag button
+  const tagButton = document.createElement('button');
+  tagButton.textContent = 'Tag';
+  tagButton.onclick = () => tagInsight(messageId, content);
+  
+  // Create cancel button
+  const cancelButton = document.createElement('button');
+  cancelButton.textContent = 'Cancel';
+  cancelButton.onclick = () => hideInsightDropdown(messageId);
+  
+  // Assemble dropdown
+  dropdown.appendChild(typeSelect);
+  dropdown.appendChild(impactSelect);
+  dropdown.appendChild(noteInput);
+  dropdown.appendChild(tagButton);
+  dropdown.appendChild(cancelButton);
+  
+  // Assemble insight controls
+  insightControls.appendChild(insightButton);
+  insightControls.appendChild(dropdown);
+  
+  // Add to message content
+  messageContent.appendChild(insightControls);
 }
