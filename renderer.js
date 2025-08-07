@@ -898,6 +898,9 @@ async function sendMessage() {
     const requestTokens = countTokens(getSession(sessionId));
     addTokens(requestTokens);
     
+    // Declare assistantMessage variable at proper scope level
+    let assistantMessage = null;
+    
     // Detect if running on supported mobile browser for streaming
     const shouldUseStreaming = isMobileBrowserWithStreaming() && (isChromeOnMobile() || isSafariOnMobile());
     
@@ -911,7 +914,6 @@ async function sendMessage() {
       const streamingMessageDiv = createStreamingMessageContainer(chatbox, 'Sonder');
       const contentSpan = streamingMessageDiv.querySelector('.streaming-content');
       let fullStreamedContent = '';
-      let assistantMessage = null;
       let streamingSuccessful = false;
       
       try {
