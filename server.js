@@ -123,7 +123,7 @@ app.post('/api/converse', apiLimiter, validateChatRequest, async (req, res) => {
             });
         }
 
-        const { messages, model = 'gpt-4o-mini', max_tokens = 4000, temperature = 0.7 } = req.body;
+        const { messages, model = 'gpt-4o-mini', max_tokens = 4000, temperature = 0.7, stream = false } = req.body;
         
         // Additional security check for message content
         const hasValidMessages = messages.every(msg => {
@@ -136,23 +136,96 @@ app.post('/api/converse', apiLimiter, validateChatRequest, async (req, res) => {
             return res.status(400).json({ error: 'All messages must have valid role and content' });
         }
 
-        console.log(`Making OpenAI request with model: ${model}`);
+        console.log(`Making OpenAI request with model: ${model}, streaming: ${stream}`);
         
-        const completion = await openai.chat.completions.create({
-            model: model,
-            messages: messages,
-            max_tokens: Math.min(max_tokens, 4000), // Enforce limit
-            temperature: Math.max(0, Math.min(temperature, 2)), // Clamp temperature
-        });
+        if (stream) {
+            // Set up Server-Sent Events for streaming response
+            res.writeHead(200, {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production' 
+                    ? 'https://recursivecognition.org' 
+                    : req.headers.origin || '*',
+                'Access-Control-Allow-Credentials': 'true'
+            });
+            
+            // Keep connection alive
+            const keepAlive = setInterval(() => {
+                res.write(': keep-alive\n\n');
+            }, 30000);
+            
+            try {
+                const streamResponse = await openai.chat.completions.create({
+                    model: model,
+                    messages: messages,
+                    max_tokens: Math.min(max_tokens, 4000),
+                    temperature: Math.max(0, Math.min(temperature, 2)),
+                    stream: true
+                });
+                
+                let fullContent = '';
+                let usage = null;
+                
+                for await (const chunk of streamResponse) {
+                    const delta = chunk.choices[0]?.delta;
+                    
+                    if (delta?.content) {
+                        fullContent += delta.content;
+                        
+                        // Send each chunk as a server-sent event
+                        res.write(`data: ${JSON.stringify({
+                            type: 'content',
+                            content: delta.content,
+                            fullContent: fullContent
+                        })}\n\n`);
+                    }
+                    
+                    // Check for completion
+                    if (chunk.choices[0]?.finish_reason) {
+                        usage = chunk.usage;
+                        break;
+                    }
+                }
+                
+                // Send completion event
+                res.write(`data: ${JSON.stringify({
+                    type: 'complete',
+                    fullContent: fullContent,
+                    usage: usage,
+                    model: model
+                })}\n\n`);
+                
+                clearInterval(keepAlive);
+                res.end();
+                
+            } catch (streamError) {
+                console.error('Streaming error:', streamError);
+                clearInterval(keepAlive);
+                res.write(`data: ${JSON.stringify({
+                    type: 'error',
+                    error: 'Streaming failed: ' + streamError.message
+                })}\n\n`);
+                res.end();
+            }
+        } else {
+            // Non-streaming response (legacy support)
+            const completion = await openai.chat.completions.create({
+                model: model,
+                messages: messages,
+                max_tokens: Math.min(max_tokens, 4000), // Enforce limit
+                temperature: Math.max(0, Math.min(temperature, 2)), // Clamp temperature
+            });
 
-        const reply = completion.choices[0].message.content;
-        const usage = completion.usage;
-        
-        res.json({ 
-            reply: reply,
-            usage: usage,
-            model: model
-        });
+            const reply = completion.choices[0].message.content;
+            const usage = completion.usage;
+            
+            res.json({ 
+                reply: reply,
+                usage: usage,
+                model: model
+            });
+        }
         
     } catch (error) {
         console.error('OpenAI API error:', error);
