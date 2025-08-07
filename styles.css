@@ -1534,7 +1534,7 @@ body {
     }
     
     .chat-messages {
-        padding: 0.75rem;
+        padding: 0.75rem 0.5rem;
     }
     
     .message-container {
@@ -1569,7 +1569,7 @@ body {
     }
     
     .chat-messages {
-        padding: 0.5rem;
+        padding: 0.5rem 0.25rem;
         /* Add padding bottom to prevent overlap with input */
         padding-bottom: 1rem;
     }
