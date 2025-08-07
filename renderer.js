@@ -543,16 +543,27 @@ function renderMessage(chatbox, sender, content, messageId, isFormatted = false)
   const messageDiv = document.createElement('div');
   messageDiv.className = 'message-container';
   
+  // Add role-specific classes for alignment
+  if (sender === 'You') {
+    messageDiv.classList.add('user');
+  } else {
+    messageDiv.classList.add('assistant');
+  }
+  
+  // Create message wrapper for styling
+  const messageWrapper = document.createElement('div');
+  messageWrapper.className = 'message-wrapper';
+  
   // Create message content
   const messageContent = document.createElement('div');
   messageContent.className = 'message-content';
   
   if (isFormatted) {
     // Content is already HTML formatted
-    const messageWrapper = document.createElement('div');
-    messageWrapper.className = 'formatted-message';
-    messageWrapper.innerHTML = `<strong>${sender}:</strong> ${content}`;
-    messageContent.appendChild(messageWrapper);
+    const formattedContent = document.createElement('div');
+    formattedContent.className = 'formatted-message';
+    formattedContent.innerHTML = `<strong>${sender}:</strong> ${content}`;
+    messageContent.appendChild(formattedContent);
   } else {
     // Plain text content
     const messageParagraph = document.createElement('p');
@@ -638,7 +649,8 @@ function renderMessage(chatbox, sender, content, messageId, isFormatted = false)
   
   // Assemble message content
   messageContent.appendChild(insightControls);
-  messageDiv.appendChild(messageContent);
+  messageWrapper.appendChild(messageContent);
+  messageDiv.appendChild(messageWrapper);
   
   // Add to chatbox
   chatbox.appendChild(messageDiv);
@@ -1010,21 +1022,32 @@ function resetTextareaHeight() {
   // This ensures consistent placeholder positioning across all devices
 }
 
-// Enhance mobile stats button functionality for Safari
+// Enhanced stats button functionality for both mobile and desktop
 const mobileStatsButtonEl = document.getElementById('mobileStatsButton');
 if (mobileStatsButtonEl) {
-  console.log('Adding event listeners to mobile stats button');
+  console.log('Adding event listeners to stats button');
 
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  const handleClick = (e) => {
+  const handleStatsClick = (e) => {
     console.log('Stats button clicked');
     e.preventDefault();
-    showMobileStats();
+    e.stopPropagation();
+    
+    // Determine which stats function to call based on screen width
+    if (window.innerWidth > 768) {
+      console.log('Showing desktop stats');
+      showDesktopStats();
+    } else {
+      console.log('Showing mobile stats');
+      showMobileStats();
+    }
   };
 
-  mobileStatsButtonEl.addEventListener('click', handleClick);
+  // Primary click event listener
+  mobileStatsButtonEl.addEventListener('click', handleStatsClick);
 
+  // Safari-specific touch events for better mobile compatibility
   if (isSafari) {
     mobileStatsButtonEl.addEventListener('touchstart', (e) => {
       console.log('Stats button touchstart');
@@ -1034,30 +1057,149 @@ if (mobileStatsButtonEl) {
     mobileStatsButtonEl.addEventListener('touchend', (e) => {
       console.log('Stats button touchend');
       e.preventDefault();
-      showMobileStats();
+      handleStatsClick(e);
     }, { passive: false });
   }
 
+  // Keyboard accessibility
   mobileStatsButtonEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       console.log('Stats button keydown');
       e.preventDefault();
-      showMobileStats();
+      handleStatsClick(e);
     }
   });
-
-  // Direct onclick attribute as a last resort
-  mobileStatsButtonEl.onclick = (e) => {
-    console.log('Stats button onclick event');
-    e.preventDefault();
-    showMobileStats();
-  };
   
-  console.log('Mobile stats button setup complete');
+  console.log('Stats button setup complete');
 }
 
 // Make showMobileStats globally accessible for HTML onclick
 window.showMobileStats = showMobileStats;
+
+/**
+ * Show desktop stats modal/popup with improved event handling
+ */
+function showDesktopStats() {
+  console.log('showDesktopStats function called');
+  
+  const messages = getSession(sessionId);
+  const tokenStats = getTokenStats(messages);
+  const insightStats = getInsightStats();
+  
+  // Create modal overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'stats-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+  `;
+  
+  // Create stats card
+  const statsCard = document.createElement('div');
+  statsCard.style.cssText = `
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(79, 70, 229, 0.4);
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-width: 90vw;
+    width: 100%;
+    max-width: 400px;
+    color: #e5e7eb;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  `;
+  
+  // Create close function
+  const closeDesktopStats = function() {
+    console.log('Closing desktop stats modal');
+    const overlayElement = document.getElementById('stats-overlay');
+    if (overlayElement && overlayElement.parentNode) {
+      document.body.removeChild(overlayElement);
+    }
+    // Clean up event listeners
+    document.removeEventListener('keydown', handleEscapeKey);
+  };
+  
+  statsCard.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h3 style="margin: 0; color: #60a5fa; font-size: 1.2rem;">📊 Session Stats</h3>
+      <button id="desktop-close-stats" style="background: none; border: none; color: #e5e7eb; font-size: 1.5rem; cursor: pointer; padding: 0.25rem; outline: none;">×</button>
+    </div>
+    
+    <div style="display: grid; gap: 0.75rem;">
+      <div style="padding: 0.75rem; background: rgba(79, 70, 229, 0.1); border-radius: 8px; border: 1px solid rgba(79, 70, 229, 0.2);">
+        <div style="font-size: 0.8rem; color: #a78bfa; margin-bottom: 0.25rem;">Messages</div>
+        <div style="font-size: 1.1rem; font-weight: 600;">${tokenStats.messageCount}</div>
+      </div>
+      
+      <div style="padding: 0.75rem; background: rgba(79, 70, 229, 0.1); border-radius: 8px; border: 1px solid rgba(79, 70, 229, 0.2);">
+        <div style="font-size: 0.8rem; color: #a78bfa; margin-bottom: 0.25rem;">Tokens Used</div>
+        <div style="font-size: 1.1rem; font-weight: 600;">${tokenStats.totalTokens}</div>
+      </div>
+      
+      <div style="padding: 0.75rem; background: rgba(79, 70, 229, 0.1); border-radius: 8px; border: 1px solid rgba(79, 70, 229, 0.2);">
+        <div style="font-size: 0.8rem; color: #a78bfa; margin-bottom: 0.25rem;">Efficiency</div>
+        <div style="font-size: 1.1rem; font-weight: 600;">${tokenStats.percentOfLimit}%</div>
+      </div>
+      
+      <div style="padding: 0.75rem; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.2);">
+        <div style="font-size: 0.8rem; color: #34d399; margin-bottom: 0.25rem;">Insights Tagged</div>
+        <div style="font-size: 1.1rem; font-weight: 600; color: #34d399;">${insightStats.total}</div>
+      </div>
+    </div>
+  `;
+  
+  overlay.appendChild(statsCard);
+  document.body.appendChild(overlay);
+  
+  // Add proper event listeners after DOM elements are added
+  const closeButton = document.getElementById('desktop-close-stats');
+  if (closeButton) {
+    closeButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Close button clicked');
+      closeDesktopStats();
+    });
+    
+    // Also add focus for better accessibility
+    closeButton.focus();
+  }
+  
+  // Add click handler for overlay background (close when clicking outside)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      console.log('Overlay background clicked, closing modal');
+      closeDesktopStats();
+    }
+  });
+  
+  // Prevent clicks inside the stats card from closing the modal
+  statsCard.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  
+  // Add keyboard support for escape key
+  const handleEscapeKey = (e) => {
+    if (e.key === 'Escape') {
+      closeDesktopStats();
+    }
+  };
+  document.addEventListener('keydown', handleEscapeKey);
+}
+
+// Make desktop stats function globally accessible
+window.showDesktopStats = showDesktopStats;
 
 /**
  * Show mobile stats modal/popup
@@ -1523,6 +1665,17 @@ function renderMessageWithTypingAnimation(chatbox, sender, content, messageId, i
   const messageDiv = document.createElement('div');
   messageDiv.className = 'message-container';
   
+  // Add role-specific classes for alignment
+  if (sender === 'You') {
+    messageDiv.classList.add('user');
+  } else {
+    messageDiv.classList.add('assistant');
+  }
+  
+  // Create message wrapper for styling
+  const messageWrapper = document.createElement('div');
+  messageWrapper.className = 'message-wrapper';
+  
   // Create message content container
   const messageContent = document.createElement('div');
   messageContent.className = 'message-content';
@@ -1549,7 +1702,8 @@ function renderMessageWithTypingAnimation(chatbox, sender, content, messageId, i
   
   // Assemble the message
   messageContent.appendChild(typingContainer);
-  messageDiv.appendChild(messageContent);
+  messageWrapper.appendChild(messageContent);
+  messageDiv.appendChild(messageWrapper);
   chatbox.appendChild(messageDiv);
   
   // Auto-scroll to show new message
