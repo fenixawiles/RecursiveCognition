@@ -1546,6 +1546,15 @@ body {
         font-size: 0.95rem; /* Slightly reduced font size for tablet */
     }
     
+    /* Reduce message margins on tablet */
+    .message-container.user .message-wrapper {
+        margin-right: 1rem;
+    }
+    
+    .message-container.assistant .message-wrapper {
+        margin-left: 1rem;
+    }
+    
     .token-float {
         bottom: 120px; /* Above fixed footer */
         left: 0.5rem;
@@ -1581,6 +1590,15 @@ body {
 
     .message-container p, .message-container strong {
         font-size: 0.9rem; /* Reduced font size for better visibility */
+    }
+    
+    /* Reduce message margins significantly on mobile */
+    .message-container.user .message-wrapper {
+        margin-right: 0.5rem;
+    }
+    
+    .message-container.assistant .message-wrapper {
+        margin-left: 0.5rem;
     }
     
     .chat-footer {
