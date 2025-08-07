@@ -106,11 +106,11 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(25px);
-    border-bottom: 1px solid rgba(79, 70, 229, 0.4);
+    background: transparent;
+    backdrop-filter: blur(20px);
+    border-bottom: none;
     flex-shrink: 0;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    box-shadow: none;
 }
 
 .brand h1 {
@@ -213,30 +213,31 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: transparent;
     backdrop-filter: blur(20px);
     padding: 1rem;
-    border-top: 1px solid rgba(79, 70, 229, 0.3);
+    border-top: none;
     display: flex;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: none;
     z-index: 1000;
 }
 
 .input-container {
     width: 100%;
-    max-width: 800px;
+    max-width: none;
 }
 
 .input-wrapper {
     display: flex;
     align-items: center;
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(79, 70, 229, 0.4);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(79, 70, 229, 0.35);
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
     padding: 0.5rem;
     transition: all 0.3s ease;
     position: relative;
@@ -267,11 +268,11 @@ body {
 }
 
 #userInput {
-    flex: 1;
+    flex: 1 1 100%;
     border: none;
     outline: none;
     resize: none;
-    padding: 0.5rem;
+    padding: 0.5rem 1rem;
     font-size: 1rem;
     background: transparent;
     color: #e5e7eb;
@@ -282,14 +283,14 @@ body {
     overflow-y: hidden !important;
     position: relative;
     z-index: 1;
-    text-align: center;
+    text-align: left;
     line-height: 44px; /* Match height for perfect vertical centering */
     box-sizing: border-box;
 }
 
 #userInput::placeholder {
     color: rgba(156, 163, 175, 0.8);
-    text-align: center;
+    text-align: left;
     line-height: 44px; /* Match input height for perfect vertical centering */
     position: static;
     vertical-align: middle;
@@ -707,15 +708,30 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
     padding: 2rem;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 10;
     transition: opacity 0.5s ease, transform 0.5s ease;
+    /* Prevent viewport changes from affecting position */
+    height: 100vh !important;
+    height: 100dvh !important;
+    overflow: hidden;
+    /* Lock position regardless of keyboard/viewport changes */
+    transform: none !important;
+    -webkit-transform: none !important;
+    will-change: auto;
+    contain: layout;
+    /* Prevent any environmental changes from affecting centering */
+    margin: 0 !important;
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    box-sizing: border-box !important;
 }
 
 .welcome-container.hidden {
@@ -897,6 +913,11 @@ body {
 @media (max-width: 768px) {
     .welcome-container {
         padding: 1rem;
+        /* Ensure centering is maintained on tablets */
+        height: 100vh !important;
+        height: 100dvh !important;
+        transform: none !important;
+        -webkit-transform: none !important;
     }
     
     .welcome-card {
@@ -931,6 +952,22 @@ body {
 @media (max-width: 480px) {
     .welcome-container {
         padding: 0.75rem;
+        /* Lock position on mobile devices - prevent keyboard interference */
+        height: 100vh !important;
+        height: 100dvh !important;
+        height: 100svh !important; /* Small viewport height for mobile */
+        transform: none !important;
+        -webkit-transform: none !important;
+        /* Additional mobile viewport locks */
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        margin: 0 !important;
+        /* Prevent scroll or movement */
+        overflow: hidden !important;
+        -webkit-overflow-scrolling: auto !important;
     }
     
     .welcome-card {
