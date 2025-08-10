@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import { body, validationResult } from 'express-validator';
 import helmet from 'helmet';
 import { fileURLToPath } from 'url';
+import { rcipBridge } from './rcip-integration.js';
 
 // ES6 module compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -123,7 +124,7 @@ app.post('/api/converse', apiLimiter, validateChatRequest, async (req, res) => {
             });
         }
 
-        const { messages, model = 'gpt-4o-mini', max_tokens = 4000, temperature = 0.7, stream = false } = req.body;
+        const { messages, model = 'gpt-4o-mini', max_tokens = 4000, temperature = 0.7, stream = false, sessionId = 'default' } = req.body;
         
         // Additional security check for message content
         const hasValidMessages = messages.every(msg => {
@@ -134,6 +135,27 @@ app.post('/api/converse', apiLimiter, validateChatRequest, async (req, res) => {
         
         if (!hasValidMessages) {
             return res.status(400).json({ error: 'All messages must have valid role and content' });
+        }
+
+        // RCIP Processing - only for user messages
+        let rcipGuidance = null;
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.role === 'user') {
+            try {
+                rcipGuidance = rcipBridge.processUserMessage(sessionId, lastMessage.content, messages);
+                console.log(`🧠 RCIP State: ${rcipGuidance.rcipState.state}.${rcipGuidance.rcipState.move}`);
+                
+                // Insert RCIP system message to guide AI response
+                if (rcipGuidance.systemMessage) {
+                    messages.push({
+                        role: 'system',
+                        content: rcipGuidance.systemMessage
+                    });
+                }
+            } catch (rcipError) {
+                console.error('RCIP processing error:', rcipError);
+                // Continue without RCIP if it fails
+            }
         }
 
         console.log(`Making OpenAI request with model: ${model}, streaming: ${stream}`);
@@ -250,6 +272,93 @@ app.post('/api/converse', apiLimiter, validateChatRequest, async (req, res) => {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// RCIP State Management Endpoints
+app.get('/api/rcip/state/:sessionId', (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const state = rcipBridge.getSessionState(sessionId);
+        
+        if (!state) {
+            return res.status(404).json({ error: 'Session not found' });
+        }
+        
+        res.json(state);
+    } catch (error) {
+        console.error('RCIP state error:', error);
+        res.status(500).json({ error: 'Failed to retrieve session state' });
+    }
+});
+
+app.post('/api/rcip/session', (req, res) => {
+    try {
+        const { sessionId } = req.body;
+        if (!sessionId) {
+            return res.status(400).json({ error: 'Session ID required' });
+        }
+        
+        const state = rcipBridge.initializeSession(sessionId);
+        res.json({ message: 'Session initialized', state });
+    } catch (error) {
+        console.error('RCIP session init error:', error);
+        res.status(500).json({ error: 'Failed to initialize session' });
+    }
+});
+
+app.get('/api/rcip/summary/:sessionId', (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const summary = rcipBridge.generateSessionSummary(sessionId);
+        
+        if (!summary) {
+            return res.status(404).json({ error: 'Session not found' });
+        }
+        
+        res.json(summary);
+    } catch (error) {
+        console.error('RCIP summary error:', error);
+        res.status(500).json({ error: 'Failed to generate summary' });
+    }
+});
+
+app.delete('/api/rcip/session/:sessionId', (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        rcipBridge.clearSession(sessionId);
+        res.json({ message: 'Session cleared' });
+    } catch (error) {
+        console.error('RCIP session clear error:', error);
+        res.status(500).json({ error: 'Failed to clear session' });
+    }
+});
+
+app.post('/api/rcip/breakthrough/:sessionId', async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        
+        console.log(`🧠 Generating RCIP breakthrough report for session ${sessionId}...`);
+        
+        // Generate comprehensive RCIP analysis with OpenAI
+        const breakthroughReport = await rcipBridge.generateRCIPBreakthroughReport(sessionId, openai);
+        
+        if (!breakthroughReport) {
+            return res.status(404).json({ error: 'Session not found or no conversation data' });
+        }
+        
+        res.json({
+            success: true,
+            report: breakthroughReport,
+            message: 'RCIP breakthrough analysis completed'
+        });
+        
+    } catch (error) {
+        console.error('RCIP breakthrough generation error:', error);
+        res.status(500).json({ 
+            error: 'Failed to generate breakthrough report',
+            details: error.message
+        });
+    }
 });
 
 // Serve HTML files directly without rate limiting
