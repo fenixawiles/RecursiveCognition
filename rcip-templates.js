@@ -4,6 +4,7 @@
  */
 
 import { STATES, MOVES } from './rcip-engine.js';
+import { variationSystem } from './rcip-variation.js';
 
 const RESPONSE_TEMPLATES = {
   // CLARIFICATION MOVES
@@ -156,7 +157,7 @@ class RCIPResponseGenerator {
     this.templates = RESPONSE_TEMPLATES;
   }
 
-  generateResponse(state, move, scratchpad, userInput) {
+  generateResponse(state, move, scratchpad, userInput, conversationHistory = []) {
     const templateKey = `${state}.${move}`;
     const template = this.templates[templateKey];
     
@@ -167,14 +168,36 @@ class RCIPResponseGenerator {
     // Fill template slots
     const filledTemplate = this.fillTemplateSlots(template, scratchpad, userInput);
     
-    return {
-      response: filledTemplate.text,
+    const baseResponse = {
+      template: filledTemplate.text,
       guardrail: template.guardrail,
       post_hooks: template.post_hooks,
       metadata: {
         state,
         move,
         template_used: templateKey
+      }
+    };
+    
+    // Apply variation processing to prevent repetition and add dynamism
+    const turnCount = scratchpad.move_history ? scratchpad.move_history.length : 0;
+    const variedResponse = variationSystem.processVariation(
+      baseResponse, 
+      state, 
+      move, 
+      scratchpad, 
+      userInput, 
+      turnCount,
+      conversationHistory
+    );
+    
+    return {
+      response: variedResponse.template,
+      guardrail: variedResponse.guardrail,
+      post_hooks: variedResponse.post_hooks,
+      metadata: {
+        ...variedResponse.metadata,
+        variations_applied: variedResponse.variation_applied
       }
     };
   }

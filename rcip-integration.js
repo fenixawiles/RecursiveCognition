@@ -45,12 +45,13 @@ class RCIPSonderBridge {
     // Process through RCIP engine
     const rcipResult = session.engine.processUserInput(userInput, session.conversationHistory);
     
-    // Generate appropriate response
+    // Generate appropriate response with conversation history for variation processing
     const responseData = session.responseGenerator.generateResponse(
       rcipResult.state,
       rcipResult.move,
       rcipResult.scratchpad,
-      userInput
+      userInput,
+      session.conversationHistory
     );
 
     // Create system message with RCIP guidance
