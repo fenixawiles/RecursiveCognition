@@ -3,6 +3,7 @@
 // Now includes automatic detection of insights
 
 import { classifyPrompt } from './promptClassifier.js';
+import { shouldPersist } from './ephemeral.js';
 
 /**
  * Predefined insight types with their definitions
@@ -43,6 +44,7 @@ const INSIGHTS_STORAGE_KEY = 'sonder_insights';
  */
 function saveInsightsToStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: skip persistence
     localStorage.setItem(INSIGHTS_STORAGE_KEY, JSON.stringify(insightLog));
   } catch (error) {
     console.warn('Failed to save insights to localStorage:', error);
@@ -54,6 +56,7 @@ function saveInsightsToStorage() {
  */
 function loadInsightsFromStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: do not load persisted data
     const savedInsights = localStorage.getItem(INSIGHTS_STORAGE_KEY);
     if (savedInsights) {
       insightLog = JSON.parse(savedInsights);

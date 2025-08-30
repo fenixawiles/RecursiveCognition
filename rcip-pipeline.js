@@ -5,6 +5,8 @@
 
 import { RCIPEngine, STATES, MOVES } from './rcip-engine.js';
 import { RCIPResponseGenerator } from './rcip-templates.js';
+import { ACTIVE_MODEL } from './modelConfig.js';
+import { logCompression } from './compressionLog.js';
 
 class RCIPPipeline {
   constructor() {
@@ -198,7 +200,8 @@ Return JSON format:
     // Try OpenAI first if available
     if (this.openaiClient) {
       try {
-        return await this.callOpenAIForAnalysis(prompt, phase);
+        const result = await this.callOpenAIForAnalysis(prompt, phase);
+        return result;
       } catch (error) {
         console.error(`OpenAI call failed for ${phase}, falling back to template:`, error);
         // Fall through to placeholder logic
@@ -212,7 +215,9 @@ Return JSON format:
           primaryExploration: "Navigating a complex decision with competing values",
           keyConstraints: ["Time pressure", "Financial considerations", "Relationship impact"],
           operatingRole: "Someone weighing life changes",
-          suggestedStance: "Patient exploration of underlying needs"
+          suggestedStance: "Patient exploration of underlying needs",
+          tokens_used: 0,
+          finish_reason: 'fallback'
         },
         reflection: {
           coreTension: {
@@ -221,7 +226,9 @@ Return JSON format:
           },
           recurringPatterns: ["Circling back to same concerns", "Seeking external validation"],
           resistancePoints: ["Fear of making wrong choice"],
-          hiddenWisdom: "The hesitation contains important information about what truly matters"
+          hiddenWisdom: "The hesitation contains important information about what truly matters",
+          tokens_used: 0,
+          finish_reason: 'fallback'
         },
         clarification: {
           keyTerms: {
@@ -230,13 +237,17 @@ Return JSON format:
           },
           importantDistinctions: ["Security vs Safety", "Growth vs Change"],
           evaluationCriteria: ["Long-term fulfillment", "Impact on relationships"],
-          boundariesToDraw: ["What's negotiable vs non-negotiable"]
+          boundariesToDraw: ["What's negotiable vs non-negotiable"],
+          tokens_used: 0,
+          finish_reason: 'fallback'
         },
         synthesis: {
           throughline: "The tension between security and growth is pointing toward a need for sustainable change that honors both stability and evolution.",
           breakthrough: "This isn't about choosing between security and growth—it's about recognizing that true security comes from building the capacity to navigate change skillfully. The resistance to making a quick decision is actually wisdom, suggesting that the right path involves gradual, intentional steps that build confidence rather than dramatic leaps that create anxiety.",
           nextStep: "Identify one small, reversible step that moves toward growth while maintaining current stability",
-          integrationPath: "Hold both security and growth as ongoing needs rather than competing forces"
+          integrationPath: "Hold both security and growth as ongoing needs rather than competing forces",
+          tokens_used: 0,
+          finish_reason: 'fallback'
         }
       };
 
@@ -327,8 +338,16 @@ Return JSON format:
     }
 
     try {
+      // Tune per-phase token budgets
+      const phaseMax = {
+        prompting: 350,
+        reflection: 350,
+        clarification: 350,
+        synthesis: 500
+      }[phase] || 350;
+
       const completion = await this.openaiClient.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: ACTIVE_MODEL,
         messages: [
           {
             role: 'system',
@@ -339,16 +358,91 @@ Return JSON format:
             content: prompt
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.3
+        max_tokens: phaseMax,
+        temperature: 0.2,
+        response_format: { type: 'json_object' }
       });
 
-      const response = completion.choices[0].message.content;
-      return JSON.parse(response);
+      const choice = completion.choices?.[0];
+      const raw = choice?.message?.content || '{}';
+      let parsed;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (e) {
+        // Coerce into minimal structure if not parsable
+        parsed = { error: 'non_json_response', raw };
+      }
+
+      // Attach metadata
+      parsed.tokens_used = completion.usage?.total_tokens ?? null;
+      parsed.finish_reason = choice?.finish_reason ?? null;
+
+      // Log compression-like analysis for research traceability
+      try {
+        logCompression([], JSON.stringify(parsed), 'automated', 'analysis', `rcip_phase:${phase}`);
+      } catch (_) {}
+
+      // Validate/normalize per phase
+      return this.normalizePhaseOutput(phase, parsed);
       
     } catch (error) {
       console.error(`Error calling OpenAI for ${phase}:`, error);
       return this.callLLMForAnalysis(prompt, phase); // Fallback to placeholder
+    }
+  }
+  // Normalize/validate phase outputs into expected shape
+  normalizePhaseOutput(phase, data) {
+    try {
+      const safeArray = (x) => Array.isArray(x) ? x : (x == null ? [] : [String(x)]);
+      const safeObj = (x) => (x && typeof x === 'object' && !Array.isArray(x)) ? x : {};
+      const safeStr = (x) => (typeof x === 'string' ? x : (x == null ? '' : String(x)));
+
+      switch (phase) {
+        case 'prompting':
+          return {
+            primaryExploration: safeStr(data.primaryExploration),
+            keyConstraints: safeArray(data.keyConstraints).map(String).slice(0, 5),
+            operatingRole: safeStr(data.operatingRole),
+            suggestedStance: safeStr(data.suggestedStance),
+            tokens_used: data.tokens_used ?? null,
+            finish_reason: safeStr(data.finish_reason)
+          };
+        case 'reflection':
+          return {
+            coreTension: safeObj(data.coreTension) && (data.coreTension.side1 || data.coreTension.side2) ? {
+              side1: safeStr(data.coreTension.side1),
+              side2: safeStr(data.coreTension.side2)
+            } : null,
+            recurringPatterns: safeArray(data.recurringPatterns).map(String).slice(0, 5),
+            resistancePoints: safeArray(data.resistancePoints).map(String).slice(0, 5),
+            hiddenWisdom: safeStr(data.hiddenWisdom),
+            tokens_used: data.tokens_used ?? null,
+            finish_reason: safeStr(data.finish_reason)
+          };
+        case 'clarification':
+          return {
+            keyTerms: safeObj(data.keyTerms),
+            importantDistinctions: safeArray(data.importantDistinctions).map(String).slice(0, 8),
+            evaluationCriteria: safeArray(data.evaluationCriteria).map(String).slice(0, 8),
+            boundariesToDraw: safeArray(data.boundariesToDraw).map(String).slice(0, 8),
+            tokens_used: data.tokens_used ?? null,
+            finish_reason: safeStr(data.finish_reason)
+          };
+        case 'synthesis':
+          return {
+            throughline: safeStr(data.throughline),
+            breakthrough: safeStr(data.breakthrough),
+            nextStep: safeStr(data.nextStep),
+            integrationPath: safeStr(data.integrationPath),
+            tokens_used: data.tokens_used ?? null,
+            finish_reason: safeStr(data.finish_reason)
+          };
+        default:
+          return data;
+      }
+    } catch (e) {
+      console.warn('Normalization failed; returning raw data for phase', phase, e);
+      return data;
     }
   }
 }

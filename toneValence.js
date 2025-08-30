@@ -48,12 +48,14 @@ let valenceData = {
 
 // LocalStorage key for valence data
 const VALENCE_STORAGE_KEY = 'sonder_valence';
+import { shouldPersist } from './ephemeral.js';
 
 /**
  * Save valence data to localStorage
  */
 function saveValenceToStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: skip persistence
     const storageData = {
       messageValences: Array.from(valenceData.messageValences.entries()),
       sessionValenceHistory: valenceData.sessionValenceHistory,
@@ -71,6 +73,7 @@ function saveValenceToStorage() {
  */
 function loadValenceFromStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: do not load persisted data
     const savedData = localStorage.getItem(VALENCE_STORAGE_KEY);
     if (savedData) {
       const parsed = JSON.parse(savedData);

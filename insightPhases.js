@@ -36,8 +36,11 @@ const PHASE_STORAGE_KEY = 'sonder_phases';
 /**
  * Save phase data to localStorage
  */
+import { shouldPersist } from './ephemeral.js';
+
 function savePhasesToStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: skip persistence
     localStorage.setItem(PHASE_STORAGE_KEY, JSON.stringify(phaseData));
   } catch (error) {
     console.warn('Failed to save phases to localStorage:', error);
@@ -49,6 +52,7 @@ function savePhasesToStorage() {
  */
 function loadPhasesFromStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: do not load persisted data
     const savedPhases = localStorage.getItem(PHASE_STORAGE_KEY);
     if (savedPhases) {
       phaseData = { ...phaseData, ...JSON.parse(savedPhases) };

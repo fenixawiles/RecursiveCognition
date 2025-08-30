@@ -26,6 +26,7 @@ export const CHAIN_STRENGTH = {
 
 // Local storage key for insight chains
 const CHAINS_STORAGE_KEY = 'insightChains';
+import { shouldPersist } from './ephemeral.js';
 
 // In-memory chain storage
 let insightChains = [];
@@ -35,16 +36,18 @@ let chainIdCounter = 1;
  * Initialize insight chains system
  */
 export function initializeChainTracking() {
-    const stored = localStorage.getItem(CHAINS_STORAGE_KEY);
-    if (stored) {
-        try {
-            const data = JSON.parse(stored);
-            insightChains = data.chains || [];
-            chainIdCounter = data.nextId || 1;
-        } catch (error) {
-            console.warn('Error loading stored insight chains:', error);
-            insightChains = [];
-            chainIdCounter = 1;
+    if (shouldPersist()) {
+        const stored = localStorage.getItem(CHAINS_STORAGE_KEY);
+        if (stored) {
+            try {
+                const data = JSON.parse(stored);
+                insightChains = data.chains || [];
+                chainIdCounter = data.nextId || 1;
+            } catch (error) {
+                console.warn('Error loading stored insight chains:', error);
+                insightChains = [];
+                chainIdCounter = 1;
+            }
         }
     }
     console.log('Insight chain tracking initialized');
@@ -54,6 +57,7 @@ export function initializeChainTracking() {
  * Save chains to localStorage
  */
 function saveChains() {
+    if (!shouldPersist()) return; // Ephemeral mode: skip persistence
     const data = {
         chains: insightChains,
         nextId: chainIdCounter,
@@ -376,7 +380,9 @@ export function exportChainData() {
 export function clearChainData() {
     insightChains = [];
     chainIdCounter = 1;
-    localStorage.removeItem(CHAINS_STORAGE_KEY);
+    if (shouldPersist()) {
+        localStorage.removeItem(CHAINS_STORAGE_KEY);
+    }
     console.log('Insight chain data cleared');
 }
 

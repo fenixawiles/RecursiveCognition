@@ -1,6 +1,7 @@
 // sessionManager.js
 
 import { clearInsightLog } from './insightSchema.js';
+import { shouldPersist } from './ephemeral.js';
 
 // In-memory chat sessions store
 const sessions = new Map();
@@ -20,6 +21,7 @@ const STORAGE_KEYS = {
  */
 function saveToStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: skip persistence
     const sessionData = {};
     sessions.forEach((value, key) => {
       sessionData[key] = value;
@@ -36,6 +38,7 @@ function saveToStorage() {
  */
 function loadFromStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: do not load persisted data
     const sessionData = localStorage.getItem(STORAGE_KEYS.SESSIONS);
     if (sessionData) {
       const parsed = JSON.parse(sessionData);

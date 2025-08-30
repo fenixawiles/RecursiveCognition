@@ -35,12 +35,14 @@ let originData = {
 
 // LocalStorage key for origin data
 const ORIGIN_STORAGE_KEY = 'sonder_origins';
+import { shouldPersist } from './ephemeral.js';
 
 /**
  * Save origin data to localStorage
  */
 function saveOriginToStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: skip persistence
     const storageData = {
       insightOrigins: Array.from(originData.insightOrigins.entries()),
       originDistribution: originData.originDistribution,
@@ -58,6 +60,7 @@ function saveOriginToStorage() {
  */
 function loadOriginFromStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: do not load persisted data
     const savedData = localStorage.getItem(ORIGIN_STORAGE_KEY);
     if (savedData) {
       const parsed = JSON.parse(savedData);

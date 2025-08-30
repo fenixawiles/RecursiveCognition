@@ -6,6 +6,7 @@
 import { RCIPEngine } from './rcip-engine.js';
 import { RCIPResponseGenerator } from './rcip-templates.js';
 import { rcipPipeline } from './rcip-pipeline.js';
+import { variationSystem } from './rcip-variation.js';
 
 class RCIPSonderBridge {
   constructor() {
@@ -18,6 +19,8 @@ class RCIPSonderBridge {
   // Initialize RCIP for a new session
   initializeSession(sessionId) {
     this.engine.reset();
+    // Reset variation system to avoid cross-session leakage
+    try { variationSystem.reset(); } catch (e) { /* noop */ }
     this.sessionData.set(sessionId, {
       engine: new RCIPEngine(),
       responseGenerator: new RCIPResponseGenerator(),

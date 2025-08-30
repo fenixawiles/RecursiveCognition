@@ -183,12 +183,14 @@ let achievementData = {
 
 // LocalStorage key for achievement data
 const ACHIEVEMENT_STORAGE_KEY = 'sonder_achievements';
+import { shouldPersist } from './ephemeral.js';
 
 /**
  * Save achievement data to localStorage
  */
 function saveAchievementsToStorage() {
     try {
+        if (!shouldPersist()) return; // Ephemeral mode: skip persistence
         const storageData = {
             unlockedAchievements: Array.from(achievementData.unlockedAchievements),
             progress: Array.from(achievementData.progress.entries()),
@@ -207,6 +209,7 @@ function saveAchievementsToStorage() {
  */
 function loadAchievementsFromStorage() {
     try {
+        if (!shouldPersist()) return; // Ephemeral mode: do not load persisted data
         const savedData = localStorage.getItem(ACHIEVEMENT_STORAGE_KEY);
         if (savedData) {
             const parsed = JSON.parse(savedData);

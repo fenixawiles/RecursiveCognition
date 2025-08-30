@@ -33,12 +33,14 @@ let impactData = {
 
 // LocalStorage key for impact data
 const IMPACT_STORAGE_KEY = 'sonder_impact';
+import { shouldPersist } from './ephemeral.js';
 
 /**
  * Save impact data to localStorage
  */
 function saveImpactToStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: skip persistence
     const storageData = {
       insightImpacts: Array.from(impactData.insightImpacts.entries()),
       impactDistribution: impactData.impactDistribution
@@ -54,6 +56,7 @@ function saveImpactToStorage() {
  */
 function loadImpactFromStorage() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: do not load persisted data
     const savedData = localStorage.getItem(IMPACT_STORAGE_KEY);
     if (savedData) {
       const parsed = JSON.parse(savedData);

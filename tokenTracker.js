@@ -19,6 +19,8 @@ export function countTokens(messages) {
 /**
  * Get token usage statistics
  */
+import { ACTIVE_MODEL, getModelConfig } from './modelConfig.js';
+
 export function getTokenStats(messages) {
   const totalTokens = countTokens(messages);
   const messageCount = messages.length;
@@ -28,6 +30,6 @@ export function getTokenStats(messages) {
     totalTokens,
     messageCount,
     avgTokensPerMessage,
-    percentOfLimit: Math.round((totalTokens / 128000) * 100) // For GPT-4o-mini
+    percentOfLimit: Math.round((totalTokens / (getModelConfig(ACTIVE_MODEL).context)) * 100)
   };
 }

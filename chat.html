@@ -9,42 +9,10 @@
     <title>Sonder Chat</title>
     <link rel="stylesheet" href="styles.css?v=20250105-080440">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
     <script type="module" src="renderer.js"></script>
 </head>
 <body>
-    <script>
-        function startIntelligentAnalysis() {
-            sendPrompt('Begin intelligent analysis to identify breakthrough moments and reframe perspectives.');
-        }
-
-        function startResearchInsights() {
-            sendPrompt('Provide research insights focusing on thematic exploration and creative ideation.');
-        }
-
-        function startDeepReflection() {
-            sendPrompt('Engage in deep reflection to track emotional progress and personal growth.');
-        }
-
-        function sendPrompt(prompt) {
-            // Hide welcome message and show chat
-            const welcomeMessage = document.getElementById('welcome-message');
-            const chatbox = document.getElementById('chatbox');
-            const userInput = document.getElementById('userInput');
-            
-            if (welcomeMessage) {
-                welcomeMessage.style.display = 'none';
-            }
-            
-            // Set the prompt in the input field
-            userInput.value = prompt;
-            
-            // Trigger the send functionality
-            const sendButton = document.getElementById('sendButton');
-            if (sendButton) {
-                sendButton.click();
-            }
-        }
-    </script>
     <!-- Header with branding and controls -->
     <header class="chat-header">
         <div class="brand">
@@ -68,6 +36,12 @@
                 </button>
             </div>
             
+            <!-- Privacy & Toggles Group -->
+            <div class="button-group action-group">
+                <button id="toggleEphemeral" class="header-btn" type="button" title="Toggle Ephemeral Mode">🕶️<span class="btn-text">Ephemeral</span></button>
+                <button id="toggleAutoTag" class="header-btn" type="button" title="Toggle Auto-Tagging">🏷️<span class="btn-text">Auto-Tag</span></button>
+            </div>
+
             <!-- Action Buttons Group -->
             <div class="button-group action-group">
                 <button id="endSessionButton" class="header-btn primary-btn">
@@ -76,13 +50,13 @@
                     </svg>
                     <span class="btn-text">End Session</span>
                 </button>
-                <button class="header-btn home-btn" onclick="window.location.href='index.html'" title="Go to homepage">
+                <a class="header-btn home-btn" href="index.html" title="Go to homepage">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                         <polyline points="9,22 9,12 15,12 15,22"/>
                     </svg>
                     <span class="btn-text">Home</span>
-                </button>
+                </a>
             </div>
         </div>
     </header>
@@ -101,20 +75,20 @@
                 <h2>Welcome to Sonder!</h2>
                 <p>Your AI-powered research and reflection companion. Start a conversation to explore ideas, analyze content, and gain insights.</p>
                 <div class="welcome-features">
-                    <div class="feature-item" onclick="startIntelligentAnalysis()" style="cursor: pointer;">
+                    <div class="feature-item" data-action="intelligent-analysis" style="cursor: pointer;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M9 11H15M9 15H15M17 21L21 17L17 13M7 21L3 17L7 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span>Intelligent Analysis</span>
                     </div>
-                    <div class="feature-item" onclick="startResearchInsights()" style="cursor: pointer;">
+                    <div class="feature-item" data-action="research-insights" style="cursor: pointer;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span>Research Insights</span>
                     </div>
-                    <div class="feature-item" onclick="startDeepReflection()" style="cursor: pointer;">
+                    <div class="feature-item" data-action="deep-reflection" style="cursor: pointer;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M17 3A2.828 2.828 0 1 1 19.828 5.828L11.828 13.828A4 4 0 1 1 8.172 10.172L16.172 2.172A2.828 2.828 0 0 1 17 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>

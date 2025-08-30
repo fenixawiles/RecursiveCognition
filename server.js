@@ -8,6 +8,7 @@ import { body, validationResult } from 'express-validator';
 import helmet from 'helmet';
 import { fileURLToPath } from 'url';
 import { rcipBridge } from './rcip-integration.js';
+import { ACTIVE_MODEL, MODELS } from './modelConfig.js';
 
 // ES6 module compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -30,8 +31,8 @@ if (process.env.NODE_ENV === 'production') {
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'", "https://recursivecognition.org"],
-                scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-                scriptSrcAttr: ["'unsafe-inline'"],
+                scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+                // Allow inline styles for now due to existing inline CSS in HTML
                 styleSrc: ["'self'", "'unsafe-inline'"],
                 imgSrc: ["'self'", "data:"],
                 connectSrc: ["'self'", "https://recursivecognition.org"]
@@ -95,11 +96,10 @@ const validateChatRequest = [
         .isString()
         .isLength({ min: 1, max: 4000 })
         .trim()
-        .escape()
         .withMessage('Message content must be 1-4000 characters'),
     body('model')
         .optional()
-        .isIn(['gpt-4o-mini', 'gpt-3.5-turbo'])
+        .isIn(Object.keys(MODELS))
         .withMessage('Invalid model'),
     body('max_tokens')
         .optional()
@@ -124,7 +124,7 @@ app.post('/api/converse', apiLimiter, validateChatRequest, async (req, res) => {
             });
         }
 
-        const { messages, model = 'gpt-4o-mini', max_tokens = 4000, temperature = 0.7, stream = false, sessionId = 'default' } = req.body;
+const { messages, model = ACTIVE_MODEL, max_tokens = 4000, temperature = 0.7, stream = false, sessionId = 'default' } = req.body;
         
         // Additional security check for message content
         const hasValidMessages = messages.every(msg => {

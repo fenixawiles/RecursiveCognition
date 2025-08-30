@@ -363,8 +363,22 @@ import {
 
 import { processBatchInsights } from './insightNotifier.js';
 import { exportSessionData } from './researchExport.js';
+import { isEphemeralEnabled, setEphemeralEnabled, isAutoTagEnabled, setAutoTagEnabled } from './ephemeral.js';
 
-const sessionId = 'default-session';
+function getOrCreateSessionId() {
+  try {
+    const key = 'sonder_session_id';
+    let sid = localStorage.getItem(key);
+    if (!sid) {
+      sid = `sess_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+      localStorage.setItem(key, sid);
+    }
+    return sid;
+  } catch (_) {
+    return `sess_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+  }
+}
+const sessionId = getOrCreateSessionId();
 
 /**
  * Initialize mobile specific UX enhancements
@@ -386,7 +400,75 @@ function initializeMobileEnhancements() {
     }
     
     // Enhanced placeholder fix for all devices that need it
-    initializeUniversalPlaceholderFix();
+initializeUniversalPlaceholderFix();
+}
+
+// Quick-start handlers for welcome feature items
+function attachQuickStartHandlers() {
+  try {
+    document.querySelectorAll('.feature-item[data-action]')?.forEach(el => {
+      el.addEventListener('click', () => {
+        const action = el.getAttribute('data-action');
+        let prompt = '';
+        switch (action) {
+          case 'intelligent-analysis':
+            prompt = 'Begin intelligent analysis to identify breakthrough moments and reframe perspectives.';
+            break;
+          case 'research-insights':
+            prompt = 'Provide research insights focusing on thematic exploration and creative ideation.';
+            break;
+          case 'deep-reflection':
+            prompt = 'Engage in deep reflection to track emotional progress and personal growth.';
+            break;
+        }
+        if (prompt) {
+          const welcomeMessage = document.getElementById('welcome-message');
+          const userInput = document.getElementById('userInput');
+          if (welcomeMessage) welcomeMessage.style.display = 'none';
+          if (userInput) {
+            userInput.value = prompt;
+            const sendButton = document.getElementById('sendButton');
+            sendButton?.click();
+          }
+        }
+      });
+    });
+  } catch (e) {
+    console.warn('Failed to attach quick-start handlers', e);
+  }
+}
+
+// Initialize Ephemeral and Auto-Tag toggles
+function initializeToggles() {
+  const ephBtn = document.getElementById('toggleEphemeral');
+  const tagBtn = document.getElementById('toggleAutoTag');
+
+  const refreshLabels = () => {
+    if (ephBtn) {
+      const enabled = isEphemeralEnabled();
+      ephBtn.classList.toggle('active', enabled);
+      ephBtn.title = enabled ? 'Ephemeral Mode ON: No local saving' : 'Ephemeral Mode OFF: Local saving enabled';
+    }
+    if (tagBtn) {
+      const enabled = isAutoTagEnabled();
+      tagBtn.classList.toggle('active', enabled);
+      tagBtn.title = enabled ? 'Auto-Tagging ON' : 'Auto-Tagging OFF';
+    }
+  };
+
+  ephBtn?.addEventListener('click', () => {
+    const newVal = !isEphemeralEnabled();
+    setEphemeralEnabled(newVal);
+    refreshLabels();
+  });
+
+  tagBtn?.addEventListener('click', () => {
+    const newVal = !isAutoTagEnabled();
+    setAutoTagEnabled(newVal);
+    refreshLabels();
+  });
+
+  refreshLabels();
 }
 
 /**
@@ -544,11 +626,20 @@ async function initializeApp() {
   console.log('Chat app initialized');
   
   // Initialize session metadata
-initializeSession(sessionId, 'explorer', 'concept-development');
+  initializeSession(sessionId, 'explorer', 'concept-development');
   console.log('Interface has been simplified for a cleaner user experience.');
   
   // Initialize phase tracking
   initializePhaseTracking(sessionId);
+  
+  // Initialize RCIP session on server (best-effort)
+  try {
+    fetch('/api/rcip/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId })
+    }).catch(() => {});
+  } catch (_) {}
   
   // Show initial token display
   updateTokenDisplay();
@@ -558,11 +649,12 @@ initializeSession(sessionId, 'explorer', 'concept-development');
   
   // Initialize mobile enhancements
   initializeMobileEnhancements();
-  
-  
-// Hook into the message processing to detect and notify insights automatically
-  // Removed keystroke-based detection to prevent notification flooding
-  // Insights will now only be detected when messages are actually sent
+
+  // Attach quick-start feature handlers
+  attachQuickStartHandlers();
+
+  // Initialize toggles state and handlers
+  initializeToggles();
 
   // Restore chat history if it exists
   restoreChatHistory();
@@ -640,15 +732,21 @@ function renderMessage(chatbox, sender, content, messageId, isFormatted = false)
   messageContent.className = 'message-content';
   
   if (isFormatted) {
-    // Content is already HTML formatted
+    // Content is already HTML formatted (sanitize)
     const formattedContent = document.createElement('div');
     formattedContent.className = 'formatted-message';
-    formattedContent.innerHTML = `<strong>${sender}:</strong> ${content}`;
+    let safe = content;
+    if (typeof DOMPurify !== 'undefined') safe = DOMPurify.sanitize(content);
+    formattedContent.innerHTML = `<strong>${sender}:</strong> ${safe}`;
     messageContent.appendChild(formattedContent);
   } else {
-    // Plain text content
+    // Plain text content (escape)
     const messageParagraph = document.createElement('p');
-    messageParagraph.innerHTML = `<strong>${sender}:</strong> ${content}`;
+    const strongEl = document.createElement('strong');
+    strongEl.textContent = `${sender}: `;
+    const textNode = document.createTextNode(content);
+    messageParagraph.appendChild(strongEl);
+    messageParagraph.appendChild(textNode);
     messageContent.appendChild(messageParagraph);
   }
   
@@ -785,7 +883,14 @@ function checkAchievementsAfterInsight() {
     const insightStats = getInsightStats();
     const messages = getSession(sessionId);
     const achievementStats = getAchievementStats();
+    const metadata = generateMetadataExport();
     
+    // Derive current session duration (fallback to now - start if not finalized)
+    let currentDuration = metadata.sessionDuration;
+    if (currentDuration == null && metadata.startTimestamp) {
+      currentDuration = Date.now() - new Date(metadata.startTimestamp).getTime();
+    }
+
     // Calculate session statistics for achievement checking
     const stats = {
       sessions: 1, // For now, we have single session
@@ -793,7 +898,7 @@ function checkAchievementsAfterInsight() {
       breakthroughInsights: insightStats.byType?.breakthrough || 0,
       coConstructedInsights: insightStats.byType?.collaboration || 0, // Approximate
       singleSessionMessages: messages.length - 1, // Exclude system message
-      singleSessionDuration: Date.now() - new Date().getTime() // Approximate
+      singleSessionDuration: currentDuration || 0
     };
     
     // Check for new achievements
@@ -852,10 +957,12 @@ async function sendMessage() {
   
   // Auto-detect insights in user message (only when actually sent)
   try {
-    const insights = autoDetectInsights(userMessage.id, userInput);
-    if (insights.length > 0) {
-      insights.forEach(insight => addInsightToLog(insight));
-      processBatchInsights(insights);
+    if (isAutoTagEnabled()) {
+      const insights = autoDetectInsights(userMessage.id, userInput);
+      if (insights.length > 0) {
+        insights.forEach(insight => addInsightToLog(insight));
+        processBatchInsights(insights);
+      }
     }
   } catch (error) {
     console.warn('Error in auto-insight detection for user message:', error);
@@ -879,7 +986,7 @@ async function sendMessage() {
   if (tokenStats.totalTokens > 15000) {
     console.log(`Token limit approaching: ${tokenStats.totalTokens} tokens. Summarizing...`);
     try {
-      const summarized = await summarizeContext(messages);
+      const summarized = await summarizeContext(messages, sessionId);
       setSession(sessionId, summarized);
       messages = summarized;
       
@@ -926,7 +1033,10 @@ async function sendMessage() {
             streamingSuccessful = true;
             
             // Apply real-time formatting to the streamed content
-            const formattedChunk = applyRealTimeFormatting(fullContent);
+            let formattedChunk = applyRealTimeFormatting(fullContent);
+            if (typeof DOMPurify !== 'undefined') {
+              formattedChunk = DOMPurify.sanitize(formattedChunk);
+            }
             contentSpan.innerHTML = formattedChunk;
             
             // Auto-scroll during streaming
@@ -966,7 +1076,8 @@ async function sendMessage() {
             
             // Don't show error immediately, let fallback handle it
             throw error;
-          }
+          },
+          sessionId
         );
       } catch (streamingError) {
         console.warn('Mobile streaming failed, falling back to regular API call:', streamingError);
@@ -981,7 +1092,7 @@ async function sendMessage() {
         
         try {
           // Fallback to regular API call
-          const { content: aiResponse } = await sendChatCompletion(getSession(sessionId));
+          const { content: aiResponse } = await sendChatCompletion(getSession(sessionId), false, sessionId);
           
           // Remove fallback typing indicator
           hideTypingIndicator(fallbackTypingIndicator);
@@ -1027,7 +1138,7 @@ async function sendMessage() {
       // Use regular API call for non-supported browsers
       try {
         // Regular API call
-        const { content: aiResponse } = await sendChatCompletion(getSession(sessionId));
+        const { content: aiResponse } = await sendChatCompletion(getSession(sessionId), false, sessionId);
         
         // Remove typing indicator
         hideTypingIndicator(typingIndicator);
@@ -1526,6 +1637,9 @@ function formatResponse(response) {
   if (typeof marked !== 'undefined') {
     try {
       cleanResponse = marked.parse(response.trim());
+      if (typeof DOMPurify !== 'undefined') {
+        cleanResponse = DOMPurify.sanitize(cleanResponse);
+      }
     } catch (error) {
       console.warn('Markdown parsing failed, using plain text:', error);
       cleanResponse = response.trim();
@@ -1536,32 +1650,32 @@ function formatResponse(response) {
   
   // Detect and format numbered lists (1. 2. 3. or 1) 2) 3))
   if (cleanResponse.match(/^\d+[\.)]/m)) {
-    return formatNumberedList(cleanResponse);
+      return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(formatNumberedList(cleanResponse)) : formatNumberedList(cleanResponse);
   }
   
   // Detect and format bullet lists (- or * at start of lines)
   if (cleanResponse.match(/^[\-\*•]\s/m)) {
-    return formatBulletList(cleanResponse);
+      return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(formatBulletList(cleanResponse)) : formatBulletList(cleanResponse);
   }
   
   // Detect and format code blocks (```)
   if (cleanResponse.includes('```')) {
-    return formatCodeBlocks(cleanResponse);
+      return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(formatCodeBlocks(cleanResponse)) : formatCodeBlocks(cleanResponse);
   }
   
   // Detect and format tables (pipe-separated values)
   if (cleanResponse.match(/\|.*\|/)) {
-    return formatTable(cleanResponse);
+      return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(formatTable(cleanResponse)) : formatTable(cleanResponse);
   }
   
   // Detect and format step-by-step instructions
   if (cleanResponse.match(/(step \d+|first|second|third|then|next|finally)/i)) {
-    return formatStepByStep(cleanResponse);
+      return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(formatStepByStep(cleanResponse)) : formatStepByStep(cleanResponse);
   }
   
   // Detect and format Q&A format
   if (cleanResponse.match(/^(Q:|A:|Question:|Answer:)/m)) {
-    return formatQandA(cleanResponse);
+      return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(formatQandA(cleanResponse)) : formatQandA(cleanResponse);
   }
   
   // Detect and format headings (text followed by colon and content)
@@ -1570,7 +1684,8 @@ function formatResponse(response) {
   }
   
   // Default: format as structured paragraphs
-  return formatParagraphs(cleanResponse);
+  const formatted = formatParagraphs(cleanResponse);
+  return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(formatted) : formatted;
 }
 
 /**
@@ -2309,11 +2424,12 @@ function finishTypingAnimation(contentSpan, content, isFormatted, messageId, mes
   
   // Apply proper formatting to the original content
   const finalFormattedContent = formatResponse(originalContent);
+  const safeFinal = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(finalFormattedContent) : finalFormattedContent;
   
   // Create final formatted message
   const messageWrapper = document.createElement('div');
   messageWrapper.className = 'formatted-message';
-  messageWrapper.innerHTML = `<strong>Sonder:</strong> ${finalFormattedContent}`;
+  messageWrapper.innerHTML = `<strong>Sonder:</strong> ${safeFinal}`;
   messageContent.appendChild(messageWrapper);
   
   // Add minimalist action buttons for assistant messages after typing animation
@@ -2764,6 +2880,7 @@ function finishStreamingMessage(streamingMessageDiv, fullContent, messageId) {
   // Get the content span and apply final formatting
   const contentSpan = streamingMessageDiv.querySelector('.streaming-content');
   const finalFormattedContent = formatResponse(fullContent);
+  const safeFinal = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(finalFormattedContent) : finalFormattedContent;
   
   // Replace streaming content with final formatted version
   const messageContent = streamingMessageDiv.querySelector('.message-content');
@@ -2771,7 +2888,7 @@ function finishStreamingMessage(streamingMessageDiv, fullContent, messageId) {
   
   const finalMessage = document.createElement('div');
   finalMessage.className = 'formatted-message';
-  finalMessage.innerHTML = `<strong>Sonder:</strong> ${finalFormattedContent}`;
+  finalMessage.innerHTML = `<strong>Sonder:</strong> ${safeFinal}`;
   messageContent.appendChild(finalMessage);
   
   // Add action buttons to the message wrapper

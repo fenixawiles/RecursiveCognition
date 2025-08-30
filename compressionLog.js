@@ -12,13 +12,15 @@ let compressionLog = [];
  * @param {string} compressedOutput - The output of the compression (e.g., summary)
  * @param {string} method - The method used for compression (manual or automated)
  * @param {string} type - The type of compression (summarization or abstraction)
+ * @param {string} purpose - The research purpose/context for this compression
  */
-function logCompression(originalMessages, compressedOutput, method, type) {
+function logCompression(originalMessages, compressedOutput, method, type, purpose = '') {
   const compressionEntry = {
     originalMessages,
     compressedOutput,
     method,
     type,
+    purpose,
     timestamp: new Date().toISOString()
   };
 

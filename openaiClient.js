@@ -1,6 +1,7 @@
 // OpenAI client for Sonder chat application
 // Now uses secure server-side API endpoint instead of exposing API keys
 // Supports both streaming and non-streaming responses
+import { ACTIVE_MODEL } from './modelConfig.js';
 
 /**
  * Send a chat completion request to our local server (which proxies to OpenAI)
@@ -8,7 +9,7 @@
  * @param {boolean} stream - Whether to stream the response
  * @returns {Promise<{ content: string, usage?: object, model?: string }>} The assistant's reply message object
  */
-export async function sendChatCompletion(messages, stream = false) {
+export async function sendChatCompletion(messages, stream = false, sessionId = 'default-session') {
   try {
     const response = await fetch('/api/converse', {
       method: 'POST',
@@ -17,10 +18,11 @@ export async function sendChatCompletion(messages, stream = false) {
       },
       body: JSON.stringify({
         messages: messages,
-        model: "gpt-4o-mini",
-        max_tokens: 4000, // Increased for more detailed responses
+model: ACTIVE_MODEL,
+        max_tokens: 4000,
         temperature: 0.7,
-        stream: stream
+        stream: stream,
+        sessionId: sessionId
       })
     });
 
@@ -55,7 +57,7 @@ export async function sendChatCompletion(messages, stream = false) {
  * @param {function} onError - Callback for errors
  * @returns {Promise<void>}
  */
-export async function sendStreamingChatCompletion(messages, onContent, onComplete, onError) {
+export async function sendStreamingChatCompletion(messages, onContent, onComplete, onError, sessionId = 'default-session') {
   try {
     const response = await fetch('/api/converse', {
       method: 'POST',
@@ -64,10 +66,11 @@ export async function sendStreamingChatCompletion(messages, onContent, onComplet
       },
       body: JSON.stringify({
         messages: messages,
-        model: "gpt-4o-mini",
+model: ACTIVE_MODEL,
         max_tokens: 4000,
         temperature: 0.7,
-        stream: true
+        stream: true,
+        sessionId: sessionId
       })
     });
 

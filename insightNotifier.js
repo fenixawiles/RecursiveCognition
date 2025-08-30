@@ -70,12 +70,14 @@ let notificationSettings = {
 
 // LocalStorage keys
 const NOTIFICATION_SETTINGS_KEY = 'sonder_notification_settings';
+import { shouldPersist } from './ephemeral.js';
 
 /**
  * Save notification settings to localStorage
  */
 function saveNotificationSettings() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: skip persistence
     localStorage.setItem(NOTIFICATION_SETTINGS_KEY, JSON.stringify(notificationSettings));
   } catch (error) {
     console.warn('Failed to save notification settings:', error);
@@ -87,6 +89,7 @@ function saveNotificationSettings() {
  */
 function loadNotificationSettings() {
   try {
+    if (!shouldPersist()) return; // Ephemeral mode: do not load persisted data
     const saved = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
     if (saved) {
       notificationSettings = { ...notificationSettings, ...JSON.parse(saved) };
@@ -163,23 +166,62 @@ function createNotificationElement(template, insight, context) {
   const notification = document.createElement('div');
   notification.className = 'insight-notification';
   notification.id = `notification-${insight.id}`;
-  
-  notification.innerHTML = `
-    <div class="notification-content">
-      <div class="notification-header">
-        <span class="notification-icon">${template.icon}</span>
-        <h4 class="notification-title">${template.title}</h4>
-        <button class="notification-close" onclick="dismissNotification('${insight.id}')">&times;</button>
-      </div>
-      <p class="notification-message">${template.message}</p>
-      ${context ? `<p class="notification-context">${context}</p>` : ''}
-      <div class="notification-actions">
-        <button class="notification-action" onclick="viewInsight('${insight.id}')">View Details</button>
-        <button class="notification-action secondary" onclick="dismissNotification('${insight.id}')">Dismiss</button>
-      </div>
-    </div>
-  `;
 
+  const content = document.createElement('div');
+  content.className = 'notification-content';
+
+  const header = document.createElement('div');
+  header.className = 'notification-header';
+
+  const icon = document.createElement('span');
+  icon.className = 'notification-icon';
+  icon.textContent = template.icon;
+
+  const title = document.createElement('h4');
+  title.className = 'notification-title';
+  title.textContent = template.title;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'notification-close';
+  closeBtn.textContent = '×';
+  closeBtn.addEventListener('click', () => dismissNotification(insight.id));
+
+  header.appendChild(icon);
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+
+  const messageP = document.createElement('p');
+  messageP.className = 'notification-message';
+  messageP.textContent = template.message;
+
+  content.appendChild(header);
+  content.appendChild(messageP);
+
+  if (context) {
+    const ctx = document.createElement('p');
+    ctx.className = 'notification-context';
+    ctx.textContent = context;
+    content.appendChild(ctx);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'notification-actions';
+  const viewBtn = document.createElement('button');
+  viewBtn.className = 'notification-action';
+  viewBtn.textContent = 'View Details';
+  viewBtn.addEventListener('click', () => {
+    viewInsight(insight.id);
+  });
+  const dismissBtn = document.createElement('button');
+  dismissBtn.className = 'notification-action secondary';
+  dismissBtn.textContent = 'Dismiss';
+  dismissBtn.addEventListener('click', () => dismissNotification(insight.id));
+
+  actions.appendChild(viewBtn);
+  actions.appendChild(dismissBtn);
+  content.appendChild(actions);
+
+  notification.appendChild(content);
   return notification;
 }
 
